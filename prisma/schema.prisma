@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  timezone     String   // IANA tz
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  bookings     Booking[]        @relation("OwnerBookings")
+  attendeeOf   BookingAttendee[]
+  activities   ActivityLog[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Site {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  timezone  String   // IANA tz
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rooms     Room[]
+}
+
+model Room {
+  id         String   @id @default(cuid())
+  siteId     String
+  name       String
+  capacity   Int
+  // Opening hours per weekday in site-local time; example: { mon:{open:"08:00", close:"20:00"}, ... }
+  opening    Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  site       Site     @relation(fields: [siteId], references: [id])
+  bookings   Booking[]
+  slots      BookingSlot[]
+
+  @@unique([siteId, name])
+  @@index([siteId])
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  roomId       String
+  ownerId      String
+  // Stored as UTC datetimes; aligned to 30m boundaries in site timezone at validation time
+  startUtc     DateTime
+  endUtc       DateTime
+  canceledAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  room         Room     @relation(fields: [roomId], references: [id])
+  owner        User     @relation("OwnerBookings", fields: [ownerId], references: [id])
+  attendees    BookingAttendee[]
+  slots        BookingSlot[]
+  activities   ActivityLog[]
+
+  @@index([roomId, startUtc])
+  @@index([ownerId, startUtc])
+}
+
+model BookingAttendee {
+  bookingId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@id([bookingId, userId])
+  @@index([userId])
+}
+
+model BookingSlot {
+  // one row per 30m slot; slotStartUtc == booking-aligned UTC
+  id          String   @id @default(cuid())
+  bookingId   String
+  roomId      String
+  slotStartUtc DateTime
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  room    Room    @relation(fields: [roomId], references: [id])
+
+  @@unique([roomId, slotStartUtc]) // hard guarantee: no double-book under concurrency
+  @@index([bookingId])
+  @@index([roomId, slotStartUtc])
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String   // BOOKING_CREATED | BOOKING_CANCELED | ROOM_CREATED | ROOM_UPDATED | SITE_CREATED | SITE_UPDATED
+  entityType String   // booking | room | site
+  entityId   String
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id])
+  // no backref to arbitrary entity; entity lookups by (type,id)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+}
