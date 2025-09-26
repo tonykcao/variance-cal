@@ -47,6 +47,9 @@ model Room {
   capacity   Int
   // Opening hours per weekday in site-local time; example: { mon:{open:"08:00", close:"20:00"}, ... }
   opening    Json
+  // Pending opening hours change with effective date
+  pendingOpening Json?
+  pendingOpeningEffectiveDate DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   site       Site     @relation(fields: [siteId], references: [id])
@@ -65,6 +68,8 @@ model Booking {
   startUtc     DateTime
   endUtc       DateTime
   canceledAt   DateTime?
+  // Notes field - visible to owner, attendees, and admins
+  notes        String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -72,7 +77,6 @@ model Booking {
   owner        User     @relation("OwnerBookings", fields: [ownerId], references: [id])
   attendees    BookingAttendee[]
   slots        BookingSlot[]
-  activities   ActivityLog[]
 
   @@index([roomId, startUtc])
   @@index([ownerId, startUtc])

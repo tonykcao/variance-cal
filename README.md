@@ -12,30 +12,17 @@ A room booking system for managing shared spaces across multiple sites with time
 
 ### Automatic Setup
 
-Run the quickstart script to set up everything automatically:
-
 ```bash
-# Cross-platform (recommended)
+# One command setup
 npm run quickstart
 
-# Or platform-specific:
-npm run quickstart:unix  # Mac/Linux
-npm run quickstart:win   # Windows
+# Then start development
+npm run dev
 ```
 
-This will:
-
-1. Check Docker is running
-2. Create .env file from template
-3. Install dependencies
-4. Start MySQL database container
-5. Generate Prisma client
-6. Run database migrations
-7. Seed the database with test data
+This will check Docker, install dependencies, setup database, run migrations, and seed test data.
 
 ### Manual Setup
-
-If you prefer to set up manually:
 
 ```bash
 # 1. Copy environment variables
@@ -47,120 +34,379 @@ npm install
 # 3. Start database
 docker compose up -d
 
-# 4. Generate Prisma client
-npm run db:generate
-
-# 5. Run migrations
+# 4. Setup database
 npm run db:migrate
-
-# 6. Seed database
 npm run db:seed
 
-# 7. Start development server
+# 5. Start development
 npm run dev
 ```
 
-### Alternative: Development Without Docker
+Visit http://localhost:3000
 
-If you cannot install Docker, you have these options:
+## Project Overview
 
-1. **Use a Cloud Database** (Recommended)
-   - Sign up for a free MySQL database at [PlanetScale](https://planetscale.com) or [Railway](https://railway.app)
-   - Update the `DATABASE_URL` in `.env` with your cloud connection string
-   - Run: `npm run db:migrate` and `npm run db:seed`
+NookBook is a meeting room booking system with:
+- **Multi-site support** (SF, NY, London, Shanghai)
+- **Timezone-aware scheduling**
+- **30-minute booking slots**
+- **Concurrency-safe booking** via database constraints
+- **Role-based access** (User/Admin)
+- **Activity logging**
 
-2. **Install MySQL Locally**
-   - Download [MySQL Community Server](https://dev.mysql.com/downloads/)
-   - Create database: `CREATE DATABASE nookbook;`
-   - Update `DATABASE_URL` in `.env` to: `mysql://root:yourpassword@localhost:3306/nookbook`
-   - Run: `npm run db:migrate` and `npm run db:seed`
+### Tech Stack
 
-3. **Use SQLite for Development** (Limited)
-   - Change `provider` in `prisma/schema.prisma` from `mysql` to `sqlite`
-   - Update `DATABASE_URL` in `.env` to: `file:./dev.db`
-   - Note: Some features may not work exactly as with MySQL
+- **Framework**: Next.js 14+ with App Router
+- **Language**: TypeScript (strict mode)
+- **Database**: MySQL 8 with Prisma ORM
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Time**: date-fns with timezone support
+- **Validation**: Zod schemas
+- **Auth**: Mock auth for development
+
+### Design Philosophy
+
+- **Minimalist greyscale UI** with monospace fonts
+- **UTC storage** for all timestamps
+- **Server-side rendering** by default
+- **No emojis** in code or output
 
 ## Development
 
-### Available Scripts
+### Essential Commands
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run db:studio` - Open Prisma Studio (database viewer)
-- `npm run db:reset` - Reset database and re-seed
+```bash
+# Development
+npm run dev              # Start dev server (port 3000)
+npm run build           # Production build
+npm run lint            # Run ESLint
+npm run format          # Format with Prettier
+npm run typecheck       # TypeScript check
+
+# Database
+npm run db:migrate      # Run migrations
+npm run db:seed         # Seed test data
+npm run db:studio       # Visual database browser
+npm run db:reset        # Reset and reseed
+
+# Testing
+npm test                # Run all tests
+npm run test:unit       # Unit tests only
+npm run test:integration # Integration tests
+```
 
 ### Test Users
 
-After seeding, these users are available:
-
-- **alice-user** - Regular user (Pacific timezone)
+After seeding:
+- **alice-admin** - Admin role (Pacific timezone)
 - **bob-user** - Regular user (Eastern timezone)
-- **connor-admin** - Admin user (London timezone)
+- **connor-user** - Regular user (London timezone)
 
 ### Project Structure
 
 ```
-/
-├── app/              # Next.js app router pages
-├── components/       # React components
-├── lib/             # Utilities and database client
-├── core/            # Business logic (time, slots, etc.)
-├── data/            # Database access layer
-├── types/           # TypeScript type definitions
-├── schemas/         # Zod validation schemas
-└── prisma/          # Database schema and migrations
+app/              # Next.js pages & API routes
+├── dashboard/    # Main application
+├── api/         # REST endpoints
+components/       # React components
+lib/             # Utilities & clients
+core/            # Business logic (pure)
+data/            # Database access layer
+types/           # TypeScript types
+schemas/         # Zod validation
+prisma/          # Database schema
+test/            # Test suites
+docs/            # Documentation
 ```
 
-## Architecture
+## Code Style Guide
 
-- **Framework**: Next.js 14+ with App Router
-- **Database**: MySQL 8 with Prisma ORM
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Authentication**: Mock auth with user switcher (dev)
-- **Time Management**: date-fns with timezone support
+### TypeScript Conventions
 
-## Features
+```typescript
+// Explicit return types
+export function calculateSlots(start: Date, end: Date): Slot[] {
+  // implementation
+}
 
-- Multi-site support (SF, NY, London, Shanghai)
-- Timezone-aware scheduling
-- 30-minute booking slots
-- Concurrency-safe booking system
-- Role-based access (User/Admin)
-- Activity logging
-- Room capacity management
+// Interfaces for objects
+interface BookingInput {
+  roomId: string
+  startLocal: string
+  endLocal: string
+  attendees?: string[]
+}
 
-## Database Schema
+// const assertions
+export const SLOT_DURATION_MINUTES = 30 as const
 
-Key models:
+// Type for unions
+type BookingState = "pending" | "confirmed" | "cancelled"
+```
 
-- **User** - System users with timezone preferences
-- **Site** - Physical locations with timezones
-- **Room** - Bookable spaces with capacity and hours
-- **Booking** - Reservations with UTC times
-- **BookingSlot** - Individual 30-min slots (prevents double-booking)
+### Naming Patterns
 
-See `prisma/schema.prisma` for full schema.
+- **Files**: kebab-case (`room-availability-grid.tsx`)
+- **Components**: PascalCase (`RoomAvailabilityGrid`)
+- **Functions**: camelCase (`getUserBookings`)
+- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_TIMEZONE`)
 
-## API Endpoints
+### Best Practices
 
-- `GET /api/availability` - Check room availability
-- `POST /api/bookings` - Create booking
-- `DELETE /api/bookings/:id` - Cancel booking
-- `GET /api/sites` - List sites
-- `GET /api/rooms` - List rooms
+1. **No console.log** - Use proper logging
+2. **No emojis** - Professional text only
+3. **UTC storage** - Convert at boundaries
+4. **Transactions** - For multi-step operations
+5. **Validation** - Zod at API boundaries
+6. **Pure functions** - In `/core` directory
+7. **Test first** - TDD for business logic
 
-## Important Notes
+## Architecture Decisions
 
-### Database vs Mock Data
+### Why BookingSlot Table?
 
-**IMPORTANT**: This project uses a real MySQL database with Prisma ORM. The mock users in `lib/auth/mock-users.ts` are temporary and should be replaced with database queries once migrations are run. See the TODO comments in that file for guidance.
+MySQL lacks exclusion constraints. The unique index on `(roomId, slotStartUtc)` prevents double-booking under concurrent requests.
+
+### Why Server Actions?
+
+Better DX with Next.js 14, automatic request deduplication, and built-in optimistic updates.
+
+### Why UTC Storage?
+
+Simplifies timezone logic, prevents DST issues, enables consistent queries across global sites.
+
+### No DST Support
+
+MVP assumes fixed UTC offsets. DST transitions are not handled.
+
+## Common Tasks
+
+### Adding a New Feature
+
+1. Define types in `types/`
+2. Add Zod schema in `schemas/`
+3. Write tests first (TDD)
+4. Implement logic in `core/`
+5. Create DB queries in `data/`
+6. Build API route in `app/api/`
+7. Create UI components
+8. Update documentation
+
+### Database Changes
+
+```bash
+# 1. Edit schema
+vim prisma/schema.prisma
+
+# 2. Create migration
+npm run db:migrate
+
+# 3. Update seed if needed
+vim prisma/seed.ts
+
+# 4. Test
+npm test
+```
+
+### Debugging
+
+```bash
+# View database
+npm run db:studio
+
+# Check logs
+npm run dev  # Verbose server output
+
+# Test API
+curl http://localhost:3000/api/availability
+
+# Find port conflicts
+lsof -i :3000       # Mac/Linux
+netstat -ano | findstr :3000  # Windows
+```
+
+## API Overview
+
+### Core Endpoints
+
+```bash
+# Check availability
+GET /api/availability?sites[]=SF&capacityMin=4&from=2025-09-27
+
+# Create booking
+POST /api/bookings
+{ roomId, startLocal, endLocal, attendees[] }
+
+# Cancel booking
+DELETE /api/bookings/[id]
+
+# User bookings
+GET /api/bookings?scope=upcoming|past
+
+# Admin endpoints
+GET/POST /api/sites
+GET/POST /api/rooms
+```
+
+### Response Format
+
+```typescript
+// Success
+{ data: T }
+
+// Error
+{ error: string, details?: any }
+```
+
+## Testing Strategy
+
+### Unit Tests
+- Business logic in `/core`
+- Pure functions
+- Timezone utilities
+- Slot calculations
+
+### Integration Tests
+- API endpoints
+- Database operations
+- Concurrency scenarios
+- Permission checks
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# Watch mode
+npm test -- --watch
+
+# Coverage
+npm test -- --coverage
+
+# Specific file
+npm test availability
+```
+
+## Environment Variables
+
+```env
+# Required
+DATABASE_URL="mysql://root:password@localhost:3306/nookbook"
+
+# Optional
+NODE_ENV="development"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+## Troubleshooting
+
+### Port 3000 in Use
+
+```bash
+# Kill existing process
+npx kill-port 3000
+
+# Or use different port
+PORT=3001 npm run dev
+```
+
+### Database Issues
+
+```bash
+# Reset completely
+npm run db:reset
+
+# Check Docker
+docker ps
+docker logs nookbook-mysql
+
+# Manual reset
+docker compose down -v
+docker compose up -d
+npm run db:migrate
+npm run db:seed
+```
+
+### Build Errors
+
+```bash
+# Clear caches
+rm -rf .next node_modules
+npm install
+npm run build
+```
+
+### TypeScript Errors
+
+```bash
+# Regenerate Prisma types
+npx prisma generate
+
+# Check imports
+npm run typecheck
+```
+
+## Documentation
+
+- **[For LLM Agents](LLM.md)** - AI agent cold-start guide
+- **[Product Spec](CLAUDE.md)** - Original requirements
+- **[Architecture](docs/ARCHITECTURE.md)** - System design
+- **[API Contracts](docs/API_CONTRACTS.md)** - Endpoint details
+- **[Testing Guide](docs/TESTING_STRATEGY.md)** - Test approach
+- **[Docker Setup](docs/DOCKER_SETUP.md)** - Container setup
+
+## Performance Considerations
+
+### Database
+- Strategic indexes on query fields
+- Connection pooling via Prisma
+- Batch operations where possible
+
+### Frontend
+- Server Components by default
+- Client Components only when needed
+- Image optimization with next/image
+- Lazy loading for heavy components
+
+### Caching
+- `revalidateTag` for cache invalidation
+- Static generation for marketing pages
+- Dynamic rendering for dashboard
+
+## Security
+
+- Input validation on all endpoints
+- SQL injection prevention via Prisma
+- XSS protection via React
+- CSRF protection in mutations
+- Rate limiting (production only)
+
+## Deployment
+
+### Build for Production
+
+```bash
+# Build
+npm run build
+
+# Start
+npm start
+```
+
+### Requirements
+- Node.js 18+
+- MySQL 8.0+
+- Environment variables configured
+- Database migrations run
 
 ## Contributing
 
-1. Create feature branch
-2. Make changes
-3. Run tests
-4. Submit PR
+1. Create feature branch from `main`
+2. Follow code style (`npm run lint`)
+3. Write tests for new features
+4. Ensure tests pass (`npm test`)
+5. Submit PR with clear description
 
 ## License
 

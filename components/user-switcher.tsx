@@ -8,9 +8,32 @@ import { Button } from "@/components/ui/button"
 
 export function UserSwitcher() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
+    // Initialize with database users or fallback to mock
+    initializeUsers()
+  }, [])
+
+  const initializeUsers = async () => {
+    let availableUsers: User[] = []
+
+    // Try to fetch users from database
+    try {
+      const response = await fetch("/api/users")
+      if (response.ok) {
+        availableUsers = await response.json()
+      } else {
+        availableUsers = MOCK_USERS
+      }
+    } catch (error) {
+      console.warn("Using mock users, database not available:", error)
+      availableUsers = MOCK_USERS
+    }
+
+    setUsers(availableUsers)
+
     // Get current user from cookie
     const cookieValue = document.cookie
       .split("; ")
@@ -18,12 +41,29 @@ export function UserSwitcher() {
       ?.split("=")[1]
 
     if (cookieValue) {
-      const user = getUserById(cookieValue)
+      // Try to find user in available users
+      const user = availableUsers.find(u => u.id === cookieValue) || getUserById(cookieValue)
       if (user) {
         setCurrentUser(user)
+      } else {
+        // Cookie has invalid user, set default
+        setDefaultUser(availableUsers)
       }
+    } else {
+      // No cookie set, use default user
+      setDefaultUser(availableUsers)
     }
-  }, [])
+  }
+
+  const setDefaultUser = (availableUsers: User[]) => {
+    const defaultUser = availableUsers.find(u => u.name === "alice-admin") ||
+                        availableUsers.find(u => u.email === "alice@example.com") ||
+                        availableUsers[0]
+    if (defaultUser) {
+      setCurrentUser(defaultUser)
+      document.cookie = `mock-user-id=${defaultUser.id}; path=/; sameSite=lax`
+    }
+  }
 
   const switchUser = (user: User) => {
     // Set cookie
@@ -34,7 +74,15 @@ export function UserSwitcher() {
     window.location.reload()
   }
 
-  if (!currentUser) return null
+  // Show loading state while initializing
+  if (!currentUser || users.length === 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        <UserIcon className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="relative">
@@ -60,7 +108,7 @@ export function UserSwitcher() {
             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
               Switch User
             </div>
-            {MOCK_USERS.map(user => (
+            {users.map(user => (
               <button
                 key={user.id}
                 onClick={() => switchUser(user)}

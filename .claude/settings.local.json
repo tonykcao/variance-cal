@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["Bash(npx create-next-app:*)"],
+    "allow": [
+      "Bash(npx create-next-app:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(python:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsx:*)"
+    ],
     "deny": [],
     "ask": []
   }

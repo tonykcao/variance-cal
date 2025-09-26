@@ -47,3 +47,30 @@ CLAUDE.md
 
 # Docker volumes
 mysql_data/
+
+# LLM/Agent development files
+.agent-comm/
+.agent-locks/
+agent_messages.md
+memory/
+WIP.md
+scripts/agent-*.py
+scripts/agent-*.sh
+scripts/agent-*.bat
+scripts/test-concurrency.*
+scripts/cleanup-test-data.ts
+scripts/remove_emojis.py
+test/fixtures.ts
+test/concurrency/
+nul
+
+# Local development scripts (non-essential)
+scripts/debug-*.ts
+scripts/check-*.ts
+scripts/fix-*.ts
+scripts/get-*.ts
+scripts/test-*.ts
+scripts/update-*.ts
+
+# Claude-specific settings
+.claude/

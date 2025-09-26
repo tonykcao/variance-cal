@@ -19,12 +19,12 @@ async function main() {
   console.log("Cleared existing data")
 
   // Create users
-  const aliceUser = await prisma.user.create({
+  const aliceAdmin = await prisma.user.create({
     data: {
       email: "alice@example.com",
-      name: "alice-user",
+      name: "alice-admin",
       timezone: "America/Los_Angeles",
-      role: Role.USER,
+      role: Role.ADMIN,
     },
   })
 
@@ -37,19 +37,50 @@ async function main() {
     },
   })
 
-  const connorAdmin = await prisma.user.create({
+  const connorUser = await prisma.user.create({
     data: {
       email: "connor@example.com",
-      name: "connor-admin",
+      name: "connor-user",
       timezone: "Europe/London",
-      role: Role.ADMIN,
+      role: Role.USER,
+    },
+  })
+
+  // Create 3 dummy users for testing
+  const dummy1 = await prisma.user.create({
+    data: {
+      email: "dummy1@test.com",
+      name: "dummy1",
+      timezone: "America/Los_Angeles",
+      role: Role.USER,
+    },
+  })
+
+  const dummy2 = await prisma.user.create({
+    data: {
+      email: "dummy2@test.com",
+      name: "dummy2",
+      timezone: "America/New_York",
+      role: Role.USER,
+    },
+  })
+
+  const dummy3 = await prisma.user.create({
+    data: {
+      email: "dummy3@test.com",
+      name: "dummy3",
+      timezone: "Europe/London",
+      role: Role.USER,
     },
   })
 
   console.log("Created users:", {
-    alice: aliceUser.name,
+    alice: aliceAdmin.name,
     bob: bobUser.name,
-    connor: connorAdmin.name,
+    connor: connorUser.name,
+    dummy1: dummy1.name,
+    dummy2: dummy2.name,
+    dummy3: dummy3.name,
   })
 
   // Create sites
@@ -120,137 +151,275 @@ async function main() {
 
   console.log("Created", rooms.length, "rooms across all sites")
 
-  // Create sample bookings
+  // Create 2 weeks of realistic bookings
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
-  // Booking 1: Alice books Oak room in SF for today 10:00-11:30
+  // Helper function to create booking slots
+  async function createBookingWithSlots(
+    room: any,
+    owner: any,
+    startUtc: Date,
+    endUtc: Date,
+    attendees: any[] = [],
+    notes?: string
+  ) {
+    const booking = await prisma.booking.create({
+      data: {
+        roomId: room.id,
+        ownerId: owner.id,
+        startUtc,
+        endUtc,
+        notes,
+      },
+    })
+
+    // Calculate slots (30-minute intervals)
+    const slots = []
+    const current = new Date(startUtc)
+    while (current < endUtc) {
+      slots.push({
+        bookingId: booking.id,
+        roomId: room.id,
+        slotStartUtc: new Date(current),
+      })
+      current.setMinutes(current.getMinutes() + 30)
+    }
+
+    await prisma.bookingSlot.createMany({ data: slots })
+
+    // Add attendees
+    if (attendees.length > 0) {
+      await prisma.bookingAttendee.createMany({
+        data: attendees.map(userId => ({
+          bookingId: booking.id,
+          userId,
+        })),
+      })
+    }
+
+    // Create activity log for booking creation
+    await prisma.activityLog.create({
+      data: {
+        actorId: owner.id,
+        action: 'BOOKING_CREATED',
+        entityType: 'booking',
+        entityId: booking.id,
+        metadata: {
+          roomId: room.id,
+          roomName: room.name,
+          siteName: room.site?.name || 'Unknown',
+          startUtc: startUtc.toISOString(),
+          endUtc: endUtc.toISOString(),
+          attendeeIds: attendees || [],
+        },
+      },
+    })
+
+    return booking
+  }
+
+  // Get sites and rooms for easy access
   const sfSite = sites.find(s => s.name === "San Francisco")!
-  const oakRoom = rooms.find(r => r.name === "Oak" && r.siteId === sfSite.id)!
-
-  const booking1StartLocal = new Date(today)
-  booking1StartLocal.setHours(10, 0, 0, 0)
-  const booking1EndLocal = new Date(today)
-  booking1EndLocal.setHours(11, 30, 0, 0)
-
-  const booking1 = await prisma.booking.create({
-    data: {
-      roomId: oakRoom.id,
-      ownerId: aliceUser.id,
-      startUtc: booking1StartLocal,
-      endUtc: booking1EndLocal,
-    },
-  })
-
-  // Create booking slots for booking1
-  await prisma.bookingSlot.createMany({
-    data: [
-      {
-        bookingId: booking1.id,
-        roomId: oakRoom.id,
-        slotStartUtc: new Date(today.setHours(10, 0, 0, 0)),
-      },
-      {
-        bookingId: booking1.id,
-        roomId: oakRoom.id,
-        slotStartUtc: new Date(today.setHours(10, 30, 0, 0)),
-      },
-      {
-        bookingId: booking1.id,
-        roomId: oakRoom.id,
-        slotStartUtc: new Date(today.setHours(11, 0, 0, 0)),
-      },
-    ],
-  })
-
-  // Add Bob as attendee
-  await prisma.bookingAttendee.create({
-    data: {
-      bookingId: booking1.id,
-      userId: bobUser.id,
-    },
-  })
-
-  // Log activity for booking creation
-  await prisma.activityLog.create({
-    data: {
-      actorId: aliceUser.id,
-      action: "BOOKING_CREATED",
-      entityType: "booking",
-      entityId: booking1.id,
-      metadata: {
-        roomId: oakRoom.id,
-        roomName: oakRoom.name,
-        site: sfSite.name,
-        startUtc: booking1StartLocal.toISOString(),
-        endUtc: booking1EndLocal.toISOString(),
-      },
-    },
-  })
-
-  // Booking 2: Bob books Hudson room in NY for tomorrow 14:00-16:00
   const nySite = sites.find(s => s.name === "New York")!
-  const hudsonRoom = rooms.find(r => r.name === "Hudson" && r.siteId === nySite.id)!
+  const londonSite = sites.find(s => s.name === "London")!
+  const shanghaiSite = sites.find(s => s.name === "Shanghai")!
 
-  const booking2StartLocal = new Date(tomorrow)
-  booking2StartLocal.setHours(14, 0, 0, 0)
-  const booking2EndLocal = new Date(tomorrow)
-  booking2EndLocal.setHours(16, 0, 0, 0)
+  const bookingsCreated = []
 
-  const booking2 = await prisma.booking.create({
-    data: {
-      roomId: hudsonRoom.id,
-      ownerId: bobUser.id,
-      startUtc: booking2StartLocal,
-      endUtc: booking2EndLocal,
-    },
-  })
+  // Create realistic bookings for the next 2 weeks
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    const currentDay = new Date(today)
+    currentDay.setDate(today.getDate() + dayOffset)
 
-  // Create booking slots for booking2
-  await prisma.bookingSlot.createMany({
-    data: [
-      {
-        bookingId: booking2.id,
-        roomId: hudsonRoom.id,
-        slotStartUtc: new Date(tomorrow.setHours(14, 0, 0, 0)),
-      },
-      {
-        bookingId: booking2.id,
-        roomId: hudsonRoom.id,
-        slotStartUtc: new Date(tomorrow.setHours(14, 30, 0, 0)),
-      },
-      {
-        bookingId: booking2.id,
-        roomId: hudsonRoom.id,
-        slotStartUtc: new Date(tomorrow.setHours(15, 0, 0, 0)),
-      },
-      {
-        bookingId: booking2.id,
-        roomId: hudsonRoom.id,
-        slotStartUtc: new Date(tomorrow.setHours(15, 30, 0, 0)),
-      },
-    ],
-  })
+    // Skip weekends for most bookings (but add a few)
+    const dayOfWeek = currentDay.getDay()
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
-  // Log activity for booking creation
-  await prisma.activityLog.create({
-    data: {
-      actorId: bobUser.id,
-      action: "BOOKING_CREATED",
-      entityType: "booking",
-      entityId: booking2.id,
-      metadata: {
-        roomId: hudsonRoom.id,
-        roomName: hudsonRoom.name,
-        site: nySite.name,
-        startUtc: booking2StartLocal.toISOString(),
-        endUtc: booking2EndLocal.toISOString(),
-      },
-    },
-  })
+    if (dayOffset === 0) {
+      // Today: Alice has a morning meeting with Bob and David
+      const oakRoom = rooms.find(r => r.name === "Oak" && r.siteId === sfSite.id)!
+      const start = new Date(currentDay)
+      start.setHours(10, 0, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(11, 30, 0, 0)
 
-  console.log("Created sample bookings")
+      const booking = await createBookingWithSlots(
+        oakRoom,
+        aliceAdmin,
+        start,
+        end,
+        [bobUser.id, dummy1.id]
+      )
+      bookingsCreated.push("Alice: Oak room 10:00-11:30 with Bob and David")
+    }
+
+    if (dayOffset === 1) {
+      // Tomorrow: Bob has an afternoon meeting in NY with Emma
+      const hudsonRoom = rooms.find(r => r.name === "Hudson" && r.siteId === nySite.id)!
+      const start = new Date(currentDay)
+      start.setHours(14, 0, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(16, 0, 0, 0)
+
+      await createBookingWithSlots(
+        hudsonRoom,
+        bobUser,
+        start,
+        end,
+        [dummy2.id]
+      )
+      bookingsCreated.push("Bob: Hudson room 14:00-16:00 with Emma")
+
+      // Hour truncation test: Alice books a meeting that starts at 9:15 (should snap to 9:00)
+      const mapleRoom = rooms.find(r => r.name === "Maple" && r.siteId === sfSite.id)!
+      const start2 = new Date(currentDay)
+      start2.setHours(9, 15, 0, 0) // 9:15 will be snapped to 9:00
+      const end2 = new Date(currentDay)
+      end2.setHours(10, 45, 0, 0) // 10:45 will be snapped to 11:00
+
+      await createBookingWithSlots(
+        mapleRoom,
+        aliceAdmin,
+        new Date(currentDay.setHours(9, 0, 0, 0)), // Manually snap for seed
+        new Date(currentDay.setHours(11, 0, 0, 0)),
+        []
+      )
+      bookingsCreated.push("Alice: Maple room 9:00-11:00 (hour truncation test)")
+    }
+
+    if (dayOffset === 2) {
+      // Connor (admin) books a room in London
+      const thamesRoom = rooms.find(r => r.name === "Thames" && r.siteId === londonSite.id)!
+      const start = new Date(currentDay)
+      start.setHours(10, 0, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(12, 0, 0, 0)
+
+      await createBookingWithSlots(
+        thamesRoom,
+        connorUser,
+        start,
+        end,
+        [aliceAdmin.id, bobUser.id]
+      )
+      bookingsCreated.push("Connor: Thames room 10:00-12:00 with Alice and Bob")
+    }
+
+    if (dayOffset === 3 && !isWeekend) {
+      // Frank books a room in Shanghai
+      const bundRoom = rooms.find(r => r.name === "Bund" && r.siteId === shanghaiSite.id)!
+      const start = new Date(currentDay)
+      start.setHours(14, 30, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(16, 30, 0, 0)
+
+      await createBookingWithSlots(
+        bundRoom,
+        dummy3,
+        start,
+        end,
+        []
+      )
+      bookingsCreated.push("Frank: Bund room 14:30-16:30")
+    }
+
+    if (dayOffset === 4 && !isWeekend) {
+      // Alice has a long meeting (testing 3-hour booking)
+      const redwoodRoom = rooms.find(r => r.name === "Redwood" && r.siteId === sfSite.id)!
+      const start = new Date(currentDay)
+      start.setHours(13, 0, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(16, 0, 0, 0)
+
+      await createBookingWithSlots(
+        redwoodRoom,
+        aliceAdmin,
+        start,
+        end,
+        [dummy1.id, dummy2.id, dummy3.id] // Max 3 attendees
+      )
+      bookingsCreated.push("Alice: Redwood room 13:00-16:00 with 3 guests (max attendees)")
+    }
+
+    if (dayOffset === 5 && !isWeekend) {
+      // Bob books early morning slot
+      const empireRoom = rooms.find(r => r.name === "Empire" && r.siteId === nySite.id)!
+      const start = new Date(currentDay)
+      start.setHours(8, 0, 0, 0) // First available slot
+      const end = new Date(currentDay)
+      end.setHours(9, 30, 0, 0)
+
+      await createBookingWithSlots(
+        empireRoom,
+        bobUser,
+        start,
+        end,
+        []
+      )
+      bookingsCreated.push("Bob: Empire room 8:00-9:30 (early morning)")
+    }
+
+    if (dayOffset === 7) {
+      // Week 2: Multiple bookings on same day different rooms
+      const cedarRoom = rooms.find(r => r.name === "Cedar" && r.siteId === sfSite.id)!
+      const start1 = new Date(currentDay)
+      start1.setHours(10, 0, 0, 0)
+      const end1 = new Date(currentDay)
+      end1.setHours(11, 0, 0, 0)
+
+      await createBookingWithSlots(cedarRoom, aliceAdmin, start1, end1, [bobUser.id])
+
+      const libertyRoom = rooms.find(r => r.name === "Liberty" && r.siteId === nySite.id)!
+      const start2 = new Date(currentDay)
+      start2.setHours(15, 0, 0, 0)
+      const end2 = new Date(currentDay)
+      end2.setHours(17, 0, 0, 0)
+
+      await createBookingWithSlots(libertyRoom, bobUser, start2, end2, [dummy2.id])
+      bookingsCreated.push("Multiple: Alice Cedar 10-11, Bob Liberty 15-17")
+    }
+
+    if (dayOffset === 10 && !isWeekend) {
+      // Late evening booking (testing boundary - should end at 20:00)
+      const sohoRoom = rooms.find(r => r.name === "Soho" && r.siteId === londonSite.id)!
+      const start = new Date(currentDay)
+      start.setHours(18, 30, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(20, 0, 0, 0) // Last available slot
+
+      await createBookingWithSlots(
+        sohoRoom,
+        connorUser,
+        start,
+        end,
+        []
+      )
+      bookingsCreated.push("Connor: Soho room 18:30-20:00 (late evening)")
+    }
+
+    if (dayOffset === 12) {
+      // Future team meeting
+      const broadwayRoom = rooms.find(r => r.name === "Broadway" && r.siteId === nySite.id)!
+      const start = new Date(currentDay)
+      start.setHours(11, 0, 0, 0)
+      const end = new Date(currentDay)
+      end.setHours(13, 30, 0, 0)
+
+      await createBookingWithSlots(
+        broadwayRoom,
+        bobUser,
+        start,
+        end,
+        [aliceAdmin.id, connorUser.id]
+      )
+      bookingsCreated.push("Bob: Broadway room 11:00-13:30 team meeting")
+    }
+  }
+
+  console.log("Created sample bookings:")
+  bookingsCreated.forEach(b => console.log("  -", b))
   console.log("Seed completed successfully!")
 }
 

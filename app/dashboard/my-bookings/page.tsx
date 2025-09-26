@@ -1,9 +1,28 @@
 "use client"
 
 import { useState } from "react"
+import { useBookings } from "@/hooks/useBookings"
+import { useUserTimezone } from "@/hooks/useUserTimezone"
+import { BookingsList } from "@/components/bookings/BookingsList"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function MyBookingsPage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming")
+  const userTimezone = useUserTimezone()
+
+  const {
+    bookings,
+    isLoading,
+    error,
+    cancelBooking,
+    refetch,
+    currentUser
+  } = useBookings(activeTab)
+
+  const handleTabChange = (tab: "upcoming" | "past") => {
+    setActiveTab(tab)
+  }
 
   return (
     <div className="space-y-6">
@@ -16,7 +35,7 @@ export default function MyBookingsPage() {
       <div className="border-b">
         <div className="flex space-x-8">
           <button
-            onClick={() => setActiveTab("upcoming")}
+            onClick={() => handleTabChange("upcoming")}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "upcoming"
                 ? "border-primary text-primary"
@@ -26,7 +45,7 @@ export default function MyBookingsPage() {
             Upcoming
           </button>
           <button
-            onClick={() => setActiveTab("past")}
+            onClick={() => handleTabChange("past")}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "past"
                 ? "border-primary text-primary"
@@ -38,24 +57,31 @@ export default function MyBookingsPage() {
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <button
+              onClick={() => refetch()}
+              className="ml-2 underline hover:no-underline"
+            >
+              Try again
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Bookings List */}
-      <div className="rounded-lg border bg-card p-6">
-        {activeTab === "upcoming" ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No upcoming bookings</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Your future reservations will appear here.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No past bookings</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Your booking history will appear here.
-            </p>
-          </div>
-        )}
-      </div>
+      <BookingsList
+        bookings={bookings}
+        userTimezone={userTimezone}
+        isLoading={isLoading}
+        onCancelBooking={cancelBooking}
+        activeTab={activeTab}
+        currentUser={currentUser}
+      />
     </div>
   )
 }

@@ -1,31 +1,29 @@
 import { User } from "./types"
 
-// TODO: Replace with database queries once Prisma migrations are run
-// These mock users match the seed data in prisma/seed.ts
-// After running migrations, use prisma.user.findMany() instead
-// IMPORTANT: Our tech spec includes a real database (MySQL with Prisma)
-// This hard-coded data is temporary for initial development only
+// Fallback mock users - these IDs should match the database
+// These are used when the database is not available
+// The actual user IDs from the database will be used when available
 export const MOCK_USERS: User[] = [
   {
-    id: "user-alice",
+    id: "cmg2v5ftb0000vcm83ujio2gd",
     email: "alice@example.com",
-    name: "alice-user",
+    name: "alice-admin",
     timezone: "America/Los_Angeles",
-    role: "USER",
+    role: "ADMIN",
   },
   {
-    id: "user-bob",
+    id: "cmg2v5ftr0001vcm816b29mrv",
     email: "bob@example.com",
     name: "bob-user",
     timezone: "America/New_York",
     role: "USER",
   },
   {
-    id: "user-connor",
+    id: "cmg2v5fu20002vcm8wwixoqsy",
     email: "connor@example.com",
-    name: "connor-admin",
+    name: "connor-user",
     timezone: "Europe/London",
-    role: "ADMIN",
+    role: "USER",
   },
 ]
 

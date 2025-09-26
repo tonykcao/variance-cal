@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Building2, MapPin, Activity } from "lucide-react"
+import { Building2, MapPin, Activity, Zap } from "lucide-react"
 
 export default function AdminPage() {
   return (
@@ -9,7 +9,7 @@ export default function AdminPage() {
         <p className="text-muted-foreground">Manage sites, rooms, and monitor system activity.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/dashboard/admin/sites"
           className="rounded-lg border bg-card p-6 hover:bg-accent transition-colors"
@@ -45,6 +45,19 @@ export default function AdminPage() {
             <div>
               <h3 className="font-semibold">Activity Log</h3>
               <p className="text-sm text-muted-foreground">View system activity</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/dashboard/admin/concurrency-test"
+          className="rounded-lg border bg-card p-6 hover:bg-accent transition-colors"
+        >
+          <div className="flex items-center space-x-4">
+            <Zap className="h-8 w-8 text-primary" />
+            <div>
+              <h3 className="font-semibold">Concurrency Test</h3>
+              <p className="text-sm text-muted-foreground">Test double-booking prevention</p>
             </div>
           </div>
         </Link>
