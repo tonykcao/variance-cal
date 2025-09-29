@@ -211,7 +211,7 @@ async function main() {
     }
 
     await prisma.bookingSlot.createMany({
-      data: slots.map((slotStart) => ({
+      data: slots.map(slotStart => ({
         bookingId: booking.id,
         roomId: room.id,
         slotStartUtc: slotStart,
@@ -221,7 +221,7 @@ async function main() {
     // Add attendees
     if (attendees.length > 0) {
       await prisma.bookingAttendee.createMany({
-        data: attendees.map((userId) => ({
+        data: attendees.map(userId => ({
           bookingId: booking.id,
           userId,
         })),
@@ -238,14 +238,14 @@ async function main() {
   // Week 1 - Current week
 
   // Monday - Early morning standup
-  let date = addDays(today, ((1 - today.getDay() + 7) % 7) || 7) // Next Monday
+  let date = addDays(today, (1 - today.getDay() + 7) % 7 || 7) // Next Monday
   let room = rooms.find(r => r.name === "Oak")!
   bookings.push(
     await createBookingWithSlots(
       room,
       aliceAdmin,
       setMinutes(setHours(date, 7), 30), // 7:30 AM
-      setMinutes(setHours(date, 8), 0),  // 8:00 AM
+      setMinutes(setHours(date, 8), 0), // 8:00 AM
       [bobUser.id, connorUser.id],
       "Weekly standup meeting - Please prepare your updates"
     )
@@ -411,7 +411,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error(e)
     process.exit(1)
   })

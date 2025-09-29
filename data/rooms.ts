@@ -2,21 +2,21 @@
  * Data access layer for rooms
  */
 
-import { prisma } from '@/lib/db';
-import { Prisma } from '@prisma/client';
-import type { OpeningHours } from '@/core/opening-hours';
+import { prisma } from "@/lib/db"
+import { Prisma } from "@prisma/client"
+import type { OpeningHours } from "@/core/opening-hours"
 
 export interface RoomWithSite {
-  id: string;
-  name: string;
-  capacity: number;
-  opening: OpeningHours;
-  siteId: string;
+  id: string
+  name: string
+  capacity: number
+  opening: OpeningHours
+  siteId: string
   site: {
-    id: string;
-    name: string;
-    timezone: string;
-  };
+    id: string
+    name: string
+    timezone: string
+  }
 }
 
 /**
@@ -27,16 +27,13 @@ export async function getAllRooms(): Promise<RoomWithSite[]> {
     include: {
       site: true,
     },
-    orderBy: [
-      { site: { name: 'asc' } },
-      { name: 'asc' },
-    ],
-  });
+    orderBy: [{ site: { name: "asc" } }, { name: "asc" }],
+  })
 
   return rooms.map(room => ({
     ...room,
     opening: room.opening as OpeningHours,
-  }));
+  }))
 }
 
 /**
@@ -51,32 +48,27 @@ export async function getRoomsBySites(
   const where: Prisma.RoomWhereInput = {
     siteId: { in: siteIds },
     ...(capacityMin && { capacity: { gte: capacityMin } }),
-  };
+  }
 
   const rooms = await prisma.room.findMany({
     where,
     include: {
       site: true,
     },
-    orderBy: [
-      { site: { name: 'asc' } },
-      { name: 'asc' },
-    ],
-  });
+    orderBy: [{ site: { name: "asc" } }, { name: "asc" }],
+  })
 
   return rooms.map(room => ({
     ...room,
     opening: room.opening as OpeningHours,
-  }));
+  }))
 }
 
 /**
  * Get rooms filtered by capacity
  * @param capacityMin - Minimum capacity required
  */
-export async function getRoomsByCapacity(
-  capacityMin: number
-): Promise<RoomWithSite[]> {
+export async function getRoomsByCapacity(capacityMin: number): Promise<RoomWithSite[]> {
   const rooms = await prisma.room.findMany({
     where: {
       capacity: { gte: capacityMin },
@@ -84,16 +76,13 @@ export async function getRoomsByCapacity(
     include: {
       site: true,
     },
-    orderBy: [
-      { site: { name: 'asc' } },
-      { name: 'asc' },
-    ],
-  });
+    orderBy: [{ site: { name: "asc" } }, { name: "asc" }],
+  })
 
   return rooms.map(room => ({
     ...room,
     opening: room.opening as OpeningHours,
-  }));
+  }))
 }
 
 /**
@@ -106,14 +95,14 @@ export async function getRoomById(roomId: string): Promise<RoomWithSite | null> 
     include: {
       site: true,
     },
-  });
+  })
 
-  if (!room) return null;
+  if (!room) return null
 
   return {
     ...room,
     opening: room.opening as OpeningHours,
-  };
+  }
 }
 
 /**
@@ -121,17 +110,17 @@ export async function getRoomById(roomId: string): Promise<RoomWithSite | null> 
  * @param filters - Optional filters for sites and capacity
  */
 export async function getRoomsWithFilters(filters: {
-  siteIds?: string[];
-  capacityMin?: number;
+  siteIds?: string[]
+  capacityMin?: number
 }): Promise<RoomWithSite[]> {
-  const where: Prisma.RoomWhereInput = {};
+  const where: Prisma.RoomWhereInput = {}
 
   if (filters.siteIds && filters.siteIds.length > 0) {
-    where.siteId = { in: filters.siteIds };
+    where.siteId = { in: filters.siteIds }
   }
 
   if (filters.capacityMin) {
-    where.capacity = { gte: filters.capacityMin };
+    where.capacity = { gte: filters.capacityMin }
   }
 
   const rooms = await prisma.room.findMany({
@@ -139,16 +128,13 @@ export async function getRoomsWithFilters(filters: {
     include: {
       site: true,
     },
-    orderBy: [
-      { site: { name: 'asc' } },
-      { name: 'asc' },
-    ],
-  });
+    orderBy: [{ site: { name: "asc" } }, { name: "asc" }],
+  })
 
   return rooms.map(room => ({
     ...room,
     opening: room.opening as OpeningHours,
-  }));
+  }))
 }
 
 /**
@@ -156,10 +142,10 @@ export async function getRoomsWithFilters(filters: {
  * @param data - Room data
  */
 export async function createRoom(data: {
-  name: string;
-  capacity: number;
-  opening: OpeningHours;
-  siteId: string;
+  name: string
+  capacity: number
+  opening: OpeningHours
+  siteId: string
 }): Promise<RoomWithSite> {
   const room = await prisma.room.create({
     data: {
@@ -171,12 +157,12 @@ export async function createRoom(data: {
     include: {
       site: true,
     },
-  });
+  })
 
   return {
     ...room,
     opening: room.opening as OpeningHours,
-  };
+  }
 }
 
 /**
@@ -187,9 +173,9 @@ export async function createRoom(data: {
 export async function updateRoom(
   roomId: string,
   data: {
-    name?: string;
-    capacity?: number;
-    opening?: OpeningHours;
+    name?: string
+    capacity?: number
+    opening?: OpeningHours
   }
 ): Promise<RoomWithSite | null> {
   try {
@@ -203,13 +189,13 @@ export async function updateRoom(
       include: {
         site: true,
       },
-    });
+    })
 
     return {
       ...room,
       opening: room.opening as OpeningHours,
-    };
+    }
   } catch (error) {
-    return null;
+    return null
   }
 }

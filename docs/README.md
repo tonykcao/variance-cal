@@ -9,17 +9,20 @@
 ## Technical Documentation
 
 ### Architecture & Design
+
 - **[Architecture Overview](ARCHITECTURE.md)** - System design, tech stack, and architectural decisions
 - **[API Contracts](API_CONTRACTS.md)** - Detailed API endpoint specifications and examples
 - **[Database Schema](../prisma/schema.prisma)** - Source of truth for data models
 
 ### Development Guides
+
 - **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Git flow, PR process, and team collaboration
 - **[Setup & Environment](SETUP_AND_ENVIRONMENT.md)** - Detailed environment setup instructions
 - **[Docker Setup](DOCKER_SETUP.md)** - Container configuration and Docker installation guide
 - **[Testing Strategy](TESTING_STRATEGY.md)** - Testing approach, patterns, and best practices
 
 ### Feature Documentation
+
 - **[Coworking Space Model](COWORKING_SPACE_MODEL.md)** - Business logic and domain model
 - **[Room Hours Edge Cases](ROOM_HOURS_EDGE_CASES.md)** - Handling complex timezone and scheduling scenarios
 - **[Concurrency Testing](CONCURRENCY_TESTING.md)** - Ensuring thread-safe booking operations
@@ -43,18 +46,21 @@
 ## Key Concepts
 
 ### Database Design
+
 - **BookingSlot Table** - Unique constraint prevents double-booking
 - **UTC Storage** - All timestamps stored in UTC
 - **Soft Deletes** - Bookings marked with `canceledAt`
 - **Activity Logging** - Complete audit trail
 
 ### Business Rules
+
 - **30-minute slots** - All bookings align to half-hour boundaries
 - **No DST Support** - MVP assumes fixed UTC offsets
 - **Timezone Inheritance** - Rooms inherit timezone from their site
 - **Concurrency Safety** - Database constraints prevent race conditions
 
 ### User Roles
+
 - **USER** - Can book rooms, view/cancel own bookings
 - **ADMIN** - All user abilities plus site/room management
 
@@ -83,6 +89,7 @@ npm start              # Start production server
 ## Testing Users
 
 After seeding the database:
+
 - `alice-admin` - Administrator (Pacific timezone)
 - `bob-user` - Regular user (Eastern timezone)
 - `connor-user` - Regular user (London timezone)
@@ -90,6 +97,7 @@ After seeding the database:
 ## Common Tasks
 
 ### Adding a New Feature
+
 1. Define types in `types/`
 2. Create Zod schema in `schemas/`
 3. Write tests first (TDD)
@@ -100,6 +108,7 @@ After seeding the database:
 8. Update documentation
 
 ### Debugging Issues
+
 1. Check browser console for client errors
 2. Review server logs in terminal
 3. Inspect database with `npm run db:studio`

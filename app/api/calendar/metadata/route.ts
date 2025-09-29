@@ -3,180 +3,193 @@
  * GET /api/calendar/metadata - Get calendar configuration and metadata
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getSites } from '@/data/sites';
-import { getRoomsWithFilters } from '@/data/rooms';
-import { getBookedSlots } from '@/data/bookings';
-import { addDays, startOfDay, format, eachDayOfInterval, getDay } from 'date-fns';
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { NextRequest, NextResponse } from "next/server"
+import { getSites } from "@/data/sites"
+import { getRoomsWithFilters } from "@/data/rooms"
+import { getBookedSlots } from "@/data/bookings"
+import { addDays, startOfDay, format, eachDayOfInterval, getDay } from "date-fns"
+import { getCurrentUser } from "@/lib/auth/current-user"
 
 export async function GET(request: NextRequest) {
   try {
     // Get current user for context
-    const currentUser = await getCurrentUser(request);
+    const currentUser = await getCurrentUser(request)
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = request.nextUrl.searchParams
 
     // Parse query parameters
-    const sitesParam = searchParams.get('sites');
-    const siteIds = sitesParam ? sitesParam.split(',') : undefined;
-    const capacityMin = searchParams.get('capacityMin')
-      ? parseInt(searchParams.get('capacityMin')!)
-      : undefined;
+    const sitesParam = searchParams.get("sites")
+    const siteIds = sitesParam ? sitesParam.split(",") : undefined
+    const capacityMin = searchParams.get("capacityMin")
+      ? parseInt(searchParams.get("capacityMin")!)
+      : undefined
 
     // Parse date range (default to current month)
-    const fromParam = searchParams.get('from');
-    const toParam = searchParams.get('to');
+    const fromParam = searchParams.get("from")
+    const toParam = searchParams.get("to")
 
-    const today = startOfDay(new Date());
+    const today = startOfDay(new Date())
     const fromDate = fromParam
-      ? new Date(fromParam + 'T00:00:00Z')
-      : startOfDay(new Date(today.getFullYear(), today.getMonth(), 1)); // Start of current month
+      ? new Date(fromParam + "T00:00:00Z")
+      : startOfDay(new Date(today.getFullYear(), today.getMonth(), 1)) // Start of current month
     const toDate = toParam
-      ? new Date(toParam + 'T00:00:00Z')
-      : startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0)); // End of current month
+      ? new Date(toParam + "T00:00:00Z")
+      : startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0)) // End of current month
 
     // Get all available sites
-    const allSites = await getSites();
+    const allSites = await getSites()
 
     // Get rooms based on filters
     const rooms = await getRoomsWithFilters({
       siteIds,
       capacityMin,
-    });
+    })
 
     // Generate disabled dates (past dates)
-    const disabledDates = [];
-    const currentDate = new Date('2020-01-01'); // Start from a reasonable past date
+    const disabledDates = []
+    const currentDate = new Date("2020-01-01") // Start from a reasonable past date
     while (currentDate < today) {
-      disabledDates.push(format(currentDate, 'yyyy-MM-dd'));
-      currentDate.setDate(currentDate.getDate() + 1);
+      disabledDates.push(format(currentDate, "yyyy-MM-dd"))
+      currentDate.setDate(currentDate.getDate() + 1)
     }
 
     // Generate all dates in the range for availability summary
-    const dateRange = eachDayOfInterval({ start: fromDate, end: toDate });
+    const dateRange = eachDayOfInterval({ start: fromDate, end: toDate })
 
     // Get booking data for the range if rooms exist
-    let dateAvailabilitySummary = [];
+    let dateAvailabilitySummary = []
     if (rooms.length > 0) {
-      const roomIds = rooms.map(room => room.id);
-      const bookedSlotsByRoom = await getBookedSlots(roomIds, fromDate, addDays(toDate, 1), currentUser?.id);
+      const roomIds = rooms.map(room => room.id)
+      const bookedSlotsByRoom = await getBookedSlots(
+        roomIds,
+        fromDate,
+        addDays(toDate, 1),
+        currentUser?.id
+      )
 
       // Calculate availability summary for each date
       dateAvailabilitySummary = dateRange.map(date => {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const dayOfWeek = getDay(date); // 0 = Sunday, 1 = Monday, etc.
-        const isPastDate = date < today;
+        const dateStr = format(date, "yyyy-MM-dd")
+        const dayOfWeek = getDay(date) // 0 = Sunday, 1 = Monday, etc.
+        const isPastDate = date < today
 
-        let totalSlots = 0;
-        let availableSlots = 0;
-        let bookedSlots = 0;
+        let totalSlots = 0
+        let availableSlots = 0
+        let bookedSlots = 0
 
         // Calculate slots for each room on this date
         rooms.forEach(room => {
-          const timezone = room.site.timezone;
-          const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-          const dayName = dayNames[dayOfWeek];
-          const dayHours = (room.opening as any)[dayName];
+          const timezone = room.site.timezone
+          const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+          const dayName = dayNames[dayOfWeek]
+          const dayHours = (room.opening as any)[dayName]
 
           if (dayHours && dayHours.open && dayHours.close) {
             // Calculate number of 30-minute slots for this room
-            const [openHour, openMin] = dayHours.open.split(':').map(Number);
-            const [closeHour, closeMin] = dayHours.close.split(':').map(Number);
-            const openMinutes = openHour * 60 + openMin;
-            const closeMinutes = closeHour * 60 + closeMin;
-            const roomSlots = Math.floor((closeMinutes - openMinutes) / 30);
+            const [openHour, openMin] = dayHours.open.split(":").map(Number)
+            const [closeHour, closeMin] = dayHours.close.split(":").map(Number)
+            const openMinutes = openHour * 60 + openMin
+            const closeMinutes = closeHour * 60 + closeMin
+            const roomSlots = Math.floor((closeMinutes - openMinutes) / 30)
 
-            totalSlots += roomSlots;
+            totalSlots += roomSlots
 
             // Check booked slots for this room on this date
-            const roomBookedSlots = bookedSlotsByRoom.get(room.id);
+            const roomBookedSlots = bookedSlotsByRoom.get(room.id)
             if (roomBookedSlots) {
               // Count slots booked on this specific date
-              let roomBookedSlotsOnDate = 0;
+              let roomBookedSlotsOnDate = 0
               roomBookedSlots.forEach((slotInfo, slotTimeUtc) => {
-                const slotDate = new Date(slotTimeUtc);
-                if (format(slotDate, 'yyyy-MM-dd') === dateStr) {
-                  roomBookedSlotsOnDate++;
+                const slotDate = new Date(slotTimeUtc)
+                if (format(slotDate, "yyyy-MM-dd") === dateStr) {
+                  roomBookedSlotsOnDate++
                 }
-              });
-              bookedSlots += roomBookedSlotsOnDate;
-              availableSlots += (roomSlots - roomBookedSlotsOnDate);
+              })
+              bookedSlots += roomBookedSlotsOnDate
+              availableSlots += roomSlots - roomBookedSlotsOnDate
             } else {
-              availableSlots += roomSlots;
+              availableSlots += roomSlots
             }
           }
-        });
+        })
 
         return {
           date: dateStr,
           dayOfWeek: dayOfWeek,
-          dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
+          dayName: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][
+            dayOfWeek
+          ],
           isPastDate,
-          isToday: dateStr === format(today, 'yyyy-MM-dd'),
+          isToday: dateStr === format(today, "yyyy-MM-dd"),
           totalSlots,
           availableSlots,
           bookedSlots,
           hasAvailability: availableSlots > 0 && !isPastDate,
           utilization: totalSlots > 0 ? Math.round((bookedSlots / totalSlots) * 100) : 0,
-        };
-      });
+        }
+      })
     } else {
       // If no rooms match filters, still provide date structure
       dateAvailabilitySummary = dateRange.map(date => {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const dayOfWeek = getDay(date);
-        const isPastDate = date < today;
+        const dateStr = format(date, "yyyy-MM-dd")
+        const dayOfWeek = getDay(date)
+        const isPastDate = date < today
 
         return {
           date: dateStr,
           dayOfWeek: dayOfWeek,
-          dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
+          dayName: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][
+            dayOfWeek
+          ],
           isPastDate,
-          isToday: dateStr === format(today, 'yyyy-MM-dd'),
+          isToday: dateStr === format(today, "yyyy-MM-dd"),
           totalSlots: 0,
           availableSlots: 0,
           bookedSlots: 0,
           hasAvailability: false,
           utilization: 0,
-        };
-      });
+        }
+      })
     }
 
     // Calculate room capacity statistics
-    const capacityStats = rooms.reduce((stats, room) => {
-      const capacity = room.capacity;
-      stats.total += 1;
-      stats.totalCapacity += capacity;
-      stats.minCapacity = Math.min(stats.minCapacity || capacity, capacity);
-      stats.maxCapacity = Math.max(stats.maxCapacity || capacity, capacity);
-      return stats;
-    }, {
-      total: 0,
-      totalCapacity: 0,
-      minCapacity: undefined as number | undefined,
-      maxCapacity: undefined as number | undefined
-    });
+    const capacityStats = rooms.reduce(
+      (stats, room) => {
+        const capacity = room.capacity
+        stats.total += 1
+        stats.totalCapacity += capacity
+        stats.minCapacity = Math.min(stats.minCapacity || capacity, capacity)
+        stats.maxCapacity = Math.max(stats.maxCapacity || capacity, capacity)
+        return stats
+      },
+      {
+        total: 0,
+        totalCapacity: 0,
+        minCapacity: undefined as number | undefined,
+        maxCapacity: undefined as number | undefined,
+      }
+    )
 
-    const avgCapacity = capacityStats.total > 0 ? Math.round(capacityStats.totalCapacity / capacityStats.total) : 0;
+    const avgCapacity =
+      capacityStats.total > 0 ? Math.round(capacityStats.totalCapacity / capacityStats.total) : 0
 
     return NextResponse.json({
       metadata: {
         // Calendar configuration
         firstDayOfWeek: 0, // Sunday = 0 (matches react-day-picker default)
         weekStartsOn: 0,
-        locale: 'en-US',
+        locale: "en-US",
 
         // Date configuration
-        today: format(today, 'yyyy-MM-dd'),
+        today: format(today, "yyyy-MM-dd"),
         dateRange: {
-          from: format(fromDate, 'yyyy-MM-dd'),
-          to: format(toDate, 'yyyy-MM-dd'),
+          from: format(fromDate, "yyyy-MM-dd"),
+          to: format(toDate, "yyyy-MM-dd"),
         },
 
         // Disabled dates
         disabledDates: disabledDates.slice(-90), // Last 90 disabled dates to avoid huge array
-        disabledBefore: format(today, 'yyyy-MM-dd'),
+        disabledBefore: format(today, "yyyy-MM-dd"),
 
         // Site and room information
         sites: allSites.map(site => ({
@@ -212,11 +225,13 @@ export async function GET(request: NextRequest) {
         },
 
         // User context
-        currentUser: currentUser ? {
-          id: currentUser.id,
-          role: currentUser.role,
-          timezone: currentUser.timezone,
-        } : null,
+        currentUser: currentUser
+          ? {
+              id: currentUser.id,
+              role: currentUser.role,
+              timezone: currentUser.timezone,
+            }
+          : null,
       },
 
       // Date availability summary for the requested range
@@ -231,7 +246,7 @@ export async function GET(request: NextRequest) {
         totalBookedSlots: dateAvailabilitySummary.reduce((sum, d) => sum + d.bookedSlots, 0),
         averageUtilization: Math.round(
           dateAvailabilitySummary.reduce((sum, d) => sum + d.utilization, 0) /
-          Math.max(dateAvailabilitySummary.length, 1)
+            Math.max(dateAvailabilitySummary.length, 1)
         ),
       },
 
@@ -239,16 +254,12 @@ export async function GET(request: NextRequest) {
       query: {
         sites: siteIds,
         capacityMin,
-        from: format(fromDate, 'yyyy-MM-dd'),
-        to: format(toDate, 'yyyy-MM-dd'),
+        from: format(fromDate, "yyyy-MM-dd"),
+        to: format(toDate, "yyyy-MM-dd"),
       },
-    });
-
+    })
   } catch (error) {
-    console.error('Calendar metadata API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch calendar metadata' },
-      { status: 500 }
-    );
+    console.error("Calendar metadata API error:", error)
+    return NextResponse.json({ error: "Failed to fetch calendar metadata" }, { status: 500 })
   }
 }

@@ -16,6 +16,7 @@
    - 4GB system RAM minimum
 
 3. **Installation Steps**
+
    ```powershell
    # 1. Enable WSL 2 (Run as Administrator in PowerShell)
    wsl --install
@@ -56,6 +57,7 @@ sudo usermod -aG docker $USER
    - Apple Silicon: https://desktop.docker.com/mac/main/arm64/Docker.dmg
 
 2. **Install**
+
    ```bash
    # Or via Homebrew
    brew install --cask docker
@@ -115,6 +117,7 @@ docker run hello-world
 ### Windows Issues
 
 1. **WSL 2 not installed**
+
    ```powershell
    wsl --install
    # Restart computer
@@ -133,6 +136,7 @@ docker run hello-world
 ### General Issues
 
 1. **Permission denied**
+
    ```bash
    # Add user to docker group (Linux/Mac)
    sudo usermod -aG docker $USER
@@ -140,6 +144,7 @@ docker run hello-world
    ```
 
 2. **Port already in use**
+
    ```bash
    # Find process using port 3306
    netstat -ano | findstr :3306  # Windows

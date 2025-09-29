@@ -9,12 +9,7 @@ import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}: CalendarProps) {
+function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -50,8 +45,7 @@ function Calendar({
         day_outside:
           "day-outside text-gray-500 opacity-50 aria-selected:bg-gray-700/50 aria-selected:text-gray-400 aria-selected:opacity-30",
         day_disabled: "text-gray-500 opacity-50",
-        day_range_middle:
-          "aria-selected:bg-gray-800 aria-selected:text-gray-100",
+        day_range_middle: "aria-selected:bg-gray-800 aria-selected:text-gray-100",
         day_hidden: "invisible",
         ...classNames,
       }}

@@ -76,9 +76,8 @@ export function CreateBookingModal({
   const roomLocalTime = `${startTime} - ${endTime}`
 
   // Convert to user's timezone (simplified for now)
-  const userLocalTime = room.siteTimezone === userTimezone
-    ? roomLocalTime
-    : `${roomLocalTime} (${room.siteTimezone})`
+  const userLocalTime =
+    room.siteTimezone === userTimezone ? roomLocalTime : `${roomLocalTime} (${room.siteTimezone})`
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -151,8 +150,8 @@ export function CreateBookingModal({
                 <input
                   type="email"
                   value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleAddAttendee()}
+                  onChange={e => setEmailInput(e.target.value)}
+                  onKeyPress={e => e.key === "Enter" && handleAddAttendee()}
                   placeholder="Enter email address"
                   className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />

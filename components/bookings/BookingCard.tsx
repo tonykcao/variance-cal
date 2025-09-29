@@ -83,19 +83,17 @@ export function BookingCard({
   const isCanceled = booking.canceledAt !== null
 
   // Format dates in user's timezone
-  const startUserLocal = formatInTimeZone(
-    startDate,
-    userTimezone,
-    "MMM d, yyyy h:mm a"
-  )
+  const startUserLocal = formatInTimeZone(startDate, userTimezone, "MMM d, yyyy h:mm a")
   const endUserLocal = formatInTimeZone(endDate, userTimezone, "h:mm a")
 
   // Parse the room's local time from API (format: "2025-10-07 14:00")
   const startLocalParts = booking.startLocal.split(" ")
   // Parse the date string properly to display it
   const [year, month, day] = (startLocalParts[0] || "").split("-")
-  const startRoomDate = year && month && day ?
-    format(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)), "MMM d, yyyy") : ""
+  const startRoomDate =
+    year && month && day
+      ? format(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)), "MMM d, yyyy")
+      : ""
   const startRoomTime = startLocalParts[1] || ""
 
   const endLocalParts = booking.endLocal.split(" ")
@@ -105,7 +103,7 @@ export function BookingCard({
     // Navigate to availability page with the booking date pre-selected
     // Use the room's local date, not the user's timezone date
     // startLocal format is "yyyy-MM-dd HH:mm", extract just the date part
-    const bookingDate = booking.startLocal.split(' ')[0]
+    const bookingDate = booking.startLocal.split(" ")[0]
     router.push(`/dashboard/availability?date=${bookingDate}&site=${booking.siteName}`)
   }
 
@@ -193,11 +191,7 @@ export function BookingCard({
                   Cancel
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
+              <Button size="sm" variant="ghost" onClick={() => setIsExpanded(!isExpanded)}>
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
@@ -213,9 +207,7 @@ export function BookingCard({
           <div className="grid gap-3 sm:grid-cols-2">
             {/* Room Local Time */}
             <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">
-                Room Time ({booking.timezone})
-              </div>
+              <div className="text-xs text-muted-foreground">Room Time ({booking.timezone})</div>
               <div className="flex items-center gap-1 text-sm">
                 <Calendar className="h-3 w-3" />
                 <span>{startRoomDate}</span>
@@ -231,9 +223,7 @@ export function BookingCard({
             {/* User Local Time (if different) */}
             {userTimezone !== booking.timezone && (
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">
-                  Your Time ({userTimezone})
-                </div>
+                <div className="text-xs text-muted-foreground">Your Time ({userTimezone})</div>
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3" />
                   <span>{format(startDate, "MMM d, yyyy")}</span>
@@ -253,9 +243,7 @@ export function BookingCard({
             <div className="pt-3 border-t space-y-3">
               {/* Owner Information */}
               <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  Booked by
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">Booked by</div>
                 <div className="text-sm">
                   {booking.owner.name} ({booking.owner.email})
                   {booking.isOwner && (
@@ -269,11 +257,9 @@ export function BookingCard({
               {/* Attendees */}
               {booking.attendees.length > 0 && (
                 <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Additional Attendees
-                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">Additional Attendees</div>
                   <div className="space-y-1">
-                    {booking.attendees.map((attendee) => (
+                    {booking.attendees.map(attendee => (
                       <div key={attendee.id} className="text-sm">
                         {attendee.name} ({attendee.email})
                         {booking.isAttendee && attendee.email === booking.owner.email && (
@@ -294,17 +280,14 @@ export function BookingCard({
                   <div className="text-sm">
                     <div className="font-medium">Booking Canceled</div>
                     <div className="text-muted-foreground">
-                      Canceled on{" "}
-                      {format(new Date(booking.canceledAt), "MMM d, yyyy h:mm a")}
+                      Canceled on {format(new Date(booking.canceledAt), "MMM d, yyyy h:mm a")}
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Booking ID */}
-              <div className="text-xs text-muted-foreground">
-                Booking ID: {booking.id}
-              </div>
+              <div className="text-xs text-muted-foreground">Booking ID: {booking.id}</div>
             </div>
           )}
         </CardContent>
@@ -318,20 +301,20 @@ export function BookingCard({
             <AlertDialogDescription>
               {!booking.isOwner && isAdmin && (
                 <>
-                  <strong>Admin Action:</strong> You are canceling a booking created by {booking.owner.name}.
+                  <strong>Admin Action:</strong> You are canceling a booking created by{" "}
+                  {booking.owner.name}.
                   <br />
                   <br />
                 </>
               )}
-              Are you sure you want to cancel this booking? This action cannot be
-              undone.
+              Are you sure you want to cancel this booking? This action cannot be undone.
               {isInProgress && (
                 <>
                   <br />
                   <br />
                   <strong>
-                    Note: This booking is currently in progress. Only the remaining
-                    time will be freed for others.
+                    Note: This booking is currently in progress. Only the remaining time will be
+                    freed for others.
                   </strong>
                 </>
               )}

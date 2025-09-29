@@ -4,11 +4,7 @@ import { useState, useEffect } from "react"
 import { Clock, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface TimeRangePickerProps {
   startTime: string
@@ -23,12 +19,12 @@ interface TimeRangePickerProps {
 const generateTimeOptions = () => {
   const options = []
   for (let hour = 0; hour < 24; hour++) {
-    for (let minute of [0, 30]) {
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-      const display = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
+    for (const minute of [0, 30]) {
+      const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
+      const display = new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       })
       options.push({ value: time, label: display })
     }
@@ -44,7 +40,7 @@ export function TimeRangePicker({
   onStartTimeChange,
   onEndTimeChange,
   onClear,
-  label = "Time Range"
+  label = "Time Range",
 }: TimeRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -77,7 +73,7 @@ export function TimeRangePicker({
           <Button
             variant="outline"
             className={`w-full justify-between text-left font-normal bg-background border-input hover:bg-accent ${
-              isValid ? 'text-foreground' : 'text-muted-foreground'
+              isValid ? "text-foreground" : "text-muted-foreground"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -87,7 +83,7 @@ export function TimeRangePicker({
             {hasSelection && (
               <span
                 className="h-4 w-4 p-0 hover:bg-accent cursor-pointer rounded flex items-center justify-center"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onClear()
                 }}
@@ -103,12 +99,12 @@ export function TimeRangePicker({
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">Start Time</Label>
                 <div className="max-h-32 overflow-y-auto border border-input rounded bg-card">
-                  {timeOptions.map((option) => (
+                  {timeOptions.map(option => (
                     <button
                       key={`start-${option.value}`}
                       onClick={() => onStartTimeChange(option.value)}
                       className={`w-full text-left px-2 py-1 text-xs hover:bg-accent transition-colors ${
-                        startTime === option.value ? 'bg-accent text-foreground' : 'text-foreground'
+                        startTime === option.value ? "bg-accent text-foreground" : "text-foreground"
                       }`}
                     >
                       {option.label}
@@ -120,17 +116,17 @@ export function TimeRangePicker({
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">End Time</Label>
                 <div className="max-h-32 overflow-y-auto border border-input rounded bg-card">
-                  {timeOptions.map((option) => (
+                  {timeOptions.map(option => (
                     <button
                       key={`end-${option.value}`}
                       onClick={() => onEndTimeChange(option.value)}
                       disabled={!startTime || option.value <= startTime}
                       className={`w-full text-left px-2 py-1 text-xs transition-colors ${
                         !startTime || option.value <= startTime
-                          ? 'text-muted-foreground cursor-not-allowed'
+                          ? "text-muted-foreground cursor-not-allowed"
                           : endTime === option.value
-                          ? 'bg-accent text-foreground'
-                          : 'text-foreground hover:bg-accent'
+                            ? "bg-accent text-foreground"
+                            : "text-foreground hover:bg-accent"
                       }`}
                     >
                       {option.label}

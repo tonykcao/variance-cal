@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { PlayCircle, CheckCircle, XCircle, AlertCircle, RefreshCw, Users, Clock } from "lucide-react"
+import {
+  PlayCircle,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  RefreshCw,
+  Users,
+  Clock,
+} from "lucide-react"
 
 interface TestResult {
   userId: string
@@ -54,7 +62,7 @@ export default function ConcurrencyTestPage() {
       id: runId,
       startTime: new Date(),
       results: [],
-      status: "running"
+      status: "running",
     }
 
     setCurrentRun(newRun)
@@ -65,7 +73,7 @@ export default function ConcurrencyTestPage() {
       const response = await fetch("/api/admin/concurrency-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rounds: 1 })
+        body: JSON.stringify({ rounds: 1 }),
       })
 
       if (!response.ok) {
@@ -81,26 +89,22 @@ export default function ConcurrencyTestPage() {
         results: data.results,
         bookingCreated: data.bookingCreated,
         testDetails: data.testDetails,
-        status: "completed"
+        status: "completed",
       }
 
       setCurrentRun(completedRun)
-      setTestRuns(prev => prev.map(run =>
-        run.id === runId ? completedRun : run
-      ))
+      setTestRuns(prev => prev.map(run => (run.id === runId ? completedRun : run)))
     } catch (error) {
       console.error("Concurrency test error:", error)
 
       const errorRun: TestRun = {
         ...newRun,
         endTime: new Date(),
-        status: "error"
+        status: "error",
       }
 
       setCurrentRun(errorRun)
-      setTestRuns(prev => prev.map(run =>
-        run.id === runId ? errorRun : run
-      ))
+      setTestRuns(prev => prev.map(run => (run.id === runId ? errorRun : run)))
     } finally {
       setIsRunning(false)
     }
@@ -125,8 +129,8 @@ export default function ConcurrencyTestPage() {
         <CardHeader>
           <CardTitle>Double-Booking Prevention Test</CardTitle>
           <CardDescription>
-            Simulates 3 users attempting to book the same time slot simultaneously.
-            Only one booking should succeed due to our database constraints.
+            Simulates 3 users attempting to book the same time slot simultaneously. Only one booking
+            should succeed due to our database constraints.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -159,11 +163,15 @@ export default function ConcurrencyTestPage() {
 
           {/* Current Test Status */}
           {currentRun && (
-            <Alert className={
-              currentRun.status === "running" ? "border-blue-500" :
-              currentRun.status === "completed" ? "border-green-500" :
-              "border-red-500"
-            }>
+            <Alert
+              className={
+                currentRun.status === "running"
+                  ? "border-blue-500"
+                  : currentRun.status === "completed"
+                    ? "border-green-500"
+                    : "border-red-500"
+              }
+            >
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>
                 {currentRun.status === "running" && "Test in Progress"}
@@ -176,14 +184,26 @@ export default function ConcurrencyTestPage() {
                   <div className="mt-2 space-y-2">
                     {currentRun.testDetails && (
                       <div className="p-3 bg-muted/50 rounded-md space-y-1 text-sm">
-                        <div><strong>Test Target:</strong> {currentRun.testDetails.room} at {currentRun.testDetails.site}</div>
-                        <div><strong>Time Slot:</strong> {currentRun.testDetails.startLocal} - {currentRun.testDetails.endLocal.split(' ')[1]} ({currentRun.testDetails.timezone})</div>
-                        <div><strong>Slots Tested:</strong> {currentRun.testDetails.slotsCount} × 30-minute slots</div>
+                        <div>
+                          <strong>Test Target:</strong> {currentRun.testDetails.room} at{" "}
+                          {currentRun.testDetails.site}
+                        </div>
+                        <div>
+                          <strong>Time Slot:</strong> {currentRun.testDetails.startLocal} -{" "}
+                          {currentRun.testDetails.endLocal.split(" ")[1]} (
+                          {currentRun.testDetails.timezone})
+                        </div>
+                        <div>
+                          <strong>Slots Tested:</strong> {currentRun.testDetails.slotsCount} ×
+                          30-minute slots
+                        </div>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      <span>{currentRun.results.length} users attempted to book simultaneously</span>
+                      <span>
+                        {currentRun.results.length} users attempted to book simultaneously
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
@@ -194,16 +214,20 @@ export default function ConcurrencyTestPage() {
                     <div className="flex items-center gap-2">
                       <XCircle className="h-4 w-4 text-red-500" />
                       <span>
-                        {currentRun.results.filter(r => !r.success).length} booking(s) blocked (expected)
+                        {currentRun.results.filter(r => !r.success).length} booking(s) blocked
+                        (expected)
                       </span>
                     </div>
                     {currentRun.endTime && (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
                         <span>
-                          Test duration: {
-                            ((currentRun.endTime.getTime() - currentRun.startTime.getTime()) / 1000).toFixed(2)
-                          }s
+                          Test duration:{" "}
+                          {(
+                            (currentRun.endTime.getTime() - currentRun.startTime.getTime()) /
+                            1000
+                          ).toFixed(2)}
+                          s
                         </span>
                       </div>
                     )}
@@ -221,21 +245,23 @@ export default function ConcurrencyTestPage() {
         <Card>
           <CardHeader>
             <CardTitle>Test History</CardTitle>
-            <CardDescription>
-              Results from previous test runs
-            </CardDescription>
+            <CardDescription>Results from previous test runs</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {testRuns.map((run) => (
+              {testRuns.map(run => (
                 <div key={run.id} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Badge variant={
-                        run.status === "completed" ? "default" :
-                        run.status === "error" ? "destructive" :
-                        "secondary"
-                      }>
+                      <Badge
+                        variant={
+                          run.status === "completed"
+                            ? "default"
+                            : run.status === "error"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
                         {run.status}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
@@ -244,7 +270,8 @@ export default function ConcurrencyTestPage() {
                     </div>
                     {run.endTime && (
                       <span className="text-sm text-muted-foreground">
-                        Duration: {((run.endTime.getTime() - run.startTime.getTime()) / 1000).toFixed(2)}s
+                        Duration:{" "}
+                        {((run.endTime.getTime() - run.startTime.getTime()) / 1000).toFixed(2)}s
                       </span>
                     )}
                   </div>
@@ -267,13 +294,19 @@ export default function ConcurrencyTestPage() {
 
                   {run.bookingCreated && (
                     <div className="mt-2 p-2 bg-muted rounded text-sm">
-                      <span className="font-medium">Booking Created:</span> ID {run.bookingCreated.id.slice(-8)}
+                      <span className="font-medium">Booking Created:</span> ID{" "}
+                      {run.bookingCreated.id.slice(-8)}
                       <div className="mt-1 text-xs text-muted-foreground">
                         {run.bookingCreated.room && (
-                          <div>Room: {run.bookingCreated.room} at {run.bookingCreated.site}</div>
+                          <div>
+                            Room: {run.bookingCreated.room} at {run.bookingCreated.site}
+                          </div>
                         )}
                         {run.bookingCreated.startLocal && (
-                          <div>Time: {run.bookingCreated.startLocal} - {run.bookingCreated.endLocal?.split(' ')[1]}</div>
+                          <div>
+                            Time: {run.bookingCreated.startLocal} -{" "}
+                            {run.bookingCreated.endLocal?.split(" ")[1]}
+                          </div>
                         )}
                         <div>Owner: {run.bookingCreated.owner}</div>
                       </div>
@@ -293,17 +326,23 @@ export default function ConcurrencyTestPage() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            This test demonstrates the system's ability to handle concurrent booking requests safely.
+            This test demonstrates the system's ability to handle concurrent booking requests
+            safely.
           </p>
           <ul className="list-disc list-inside space-y-1">
-            <li>3 different users (Alice, Bob, Connor) attempt to book the same room at the same time</li>
+            <li>
+              3 different users (Alice, Bob, Connor) attempt to book the same room at the same time
+            </li>
             <li>All requests are sent simultaneously to simulate real concurrent access</li>
-            <li>The database's unique constraint on (roomId, slotStartUtc) prevents double-booking</li>
+            <li>
+              The database's unique constraint on (roomId, slotStartUtc) prevents double-booking
+            </li>
             <li>Only one user will successfully create the booking</li>
             <li>Other users receive a "time slot already booked" error</li>
           </ul>
           <p>
-            This ensures data integrity even under high concurrent load, preventing scheduling conflicts.
+            This ensures data integrity even under high concurrent load, preventing scheduling
+            conflicts.
           </p>
         </CardContent>
       </Card>

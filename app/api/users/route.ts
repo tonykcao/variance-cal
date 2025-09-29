@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
 
 /**
  * Get all users (for user switcher)
@@ -15,16 +15,13 @@ export async function GET(request: NextRequest) {
         role: true,
       },
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
-    });
+    })
 
-    return NextResponse.json(users);
+    return NextResponse.json(users)
   } catch (error) {
-    console.error('Get users error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    console.error("Get users error:", error)
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
   }
 }

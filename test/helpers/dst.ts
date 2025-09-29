@@ -3,44 +3,44 @@
  * Utilities for testing timezone transitions and edge cases
  */
 
-import { toZonedTime, fromZonedTime } from 'date-fns-tz'
+import { toZonedTime, fromZonedTime } from "date-fns-tz"
 
 /**
  * Known DST transition dates for testing
  * These are fixed dates to ensure consistent tests
  */
 export const DST_TRANSITIONS = {
-  'America/New_York': {
+  "America/New_York": {
     2025: {
-      springForward: new Date('2025-03-09T07:00:00Z'), // 2 AM EST -> 3 AM EDT
-      fallBack: new Date('2025-11-02T06:00:00Z'),      // 2 AM EDT -> 1 AM EST
+      springForward: new Date("2025-03-09T07:00:00Z"), // 2 AM EST -> 3 AM EDT
+      fallBack: new Date("2025-11-02T06:00:00Z"), // 2 AM EDT -> 1 AM EST
     },
     2026: {
-      springForward: new Date('2026-03-08T07:00:00Z'),
-      fallBack: new Date('2026-11-01T06:00:00Z'),
+      springForward: new Date("2026-03-08T07:00:00Z"),
+      fallBack: new Date("2026-11-01T06:00:00Z"),
     },
   },
-  'America/Los_Angeles': {
+  "America/Los_Angeles": {
     2025: {
-      springForward: new Date('2025-03-09T10:00:00Z'), // 2 AM PST -> 3 AM PDT
-      fallBack: new Date('2025-11-02T09:00:00Z'),      // 2 AM PDT -> 1 AM PST
+      springForward: new Date("2025-03-09T10:00:00Z"), // 2 AM PST -> 3 AM PDT
+      fallBack: new Date("2025-11-02T09:00:00Z"), // 2 AM PDT -> 1 AM PST
     },
     2026: {
-      springForward: new Date('2026-03-08T10:00:00Z'),
-      fallBack: new Date('2026-11-01T09:00:00Z'),
+      springForward: new Date("2026-03-08T10:00:00Z"),
+      fallBack: new Date("2026-11-01T09:00:00Z"),
     },
   },
-  'Europe/London': {
+  "Europe/London": {
     2025: {
-      springForward: new Date('2025-03-30T01:00:00Z'), // 1 AM GMT -> 2 AM BST
-      fallBack: new Date('2025-10-26T01:00:00Z'),      // 2 AM BST -> 1 AM GMT
+      springForward: new Date("2025-03-30T01:00:00Z"), // 1 AM GMT -> 2 AM BST
+      fallBack: new Date("2025-10-26T01:00:00Z"), // 2 AM BST -> 1 AM GMT
     },
     2026: {
-      springForward: new Date('2026-03-29T01:00:00Z'),
-      fallBack: new Date('2026-10-25T01:00:00Z'),
+      springForward: new Date("2026-03-29T01:00:00Z"),
+      fallBack: new Date("2026-10-25T01:00:00Z"),
     },
   },
-  'Asia/Shanghai': {
+  "Asia/Shanghai": {
     // China doesn't observe DST
     2025: { springForward: null, fallBack: null },
     2026: { springForward: null, fallBack: null },
@@ -68,7 +68,7 @@ export function isDST(date: Date, timezone: string): boolean {
  */
 export function getTimezoneOffset(date: Date, timezone: string): number {
   const zonedDate = toZonedTime(date, timezone)
-  const utcDate = fromZonedTime(zonedDate, 'UTC')
+  const utcDate = fromZonedTime(zonedDate, "UTC")
   return (utcDate.getTime() - date.getTime()) / (1000 * 60 * 60)
 }
 
@@ -78,7 +78,7 @@ export function getTimezoneOffset(date: Date, timezone: string): number {
 export function createDSTSpanningDates(
   timezone: string,
   year: number = 2025,
-  transition: 'spring' | 'fall' = 'spring'
+  transition: "spring" | "fall" = "spring"
 ): { before: Date; after: Date; transitionTime: Date } {
   const transitions = DST_TRANSITIONS[timezone as keyof typeof DST_TRANSITIONS]
   if (!transitions) {
@@ -91,7 +91,7 @@ export function createDSTSpanningDates(
   }
 
   const transitionTime =
-    transition === 'spring' ? yearTransitions.springForward : yearTransitions.fallBack
+    transition === "spring" ? yearTransitions.springForward : yearTransitions.fallBack
 
   if (!transitionTime) {
     throw new Error(`Timezone ${timezone} doesn't observe DST`)
@@ -107,11 +107,7 @@ export function createDSTSpanningDates(
 /**
  * Test if a booking would span a DST transition
  */
-export function spansDSTTransition(
-  startUtc: Date,
-  endUtc: Date,
-  timezone: string
-): boolean {
+export function spansDSTTransition(startUtc: Date, endUtc: Date, timezone: string): boolean {
   const transitions = DST_TRANSITIONS[timezone as keyof typeof DST_TRANSITIONS]
   if (!transitions) return false
 
@@ -136,11 +132,7 @@ export function spansDSTTransition(
 /**
  * Calculate actual duration in minutes accounting for DST
  */
-export function getDurationAcrossDST(
-  startUtc: Date,
-  endUtc: Date,
-  timezone: string
-): number {
+export function getDurationAcrossDST(startUtc: Date, endUtc: Date, timezone: string): number {
   const baseMinutes = (endUtc.getTime() - startUtc.getTime()) / (1000 * 60)
 
   if (!spansDSTTransition(startUtc, endUtc, timezone)) {
@@ -180,11 +172,11 @@ export function getDurationAcrossDST(
  */
 export function getDSTTestDates(timezone: string) {
   const transitions = DST_TRANSITIONS[timezone as keyof typeof DST_TRANSITIONS]
-  if (!transitions?.['2025']) {
+  if (!transitions?.["2025"]) {
     return null
   }
 
-  const { springForward, fallBack } = transitions['2025']
+  const { springForward, fallBack } = transitions["2025"]
   if (!springForward || !fallBack) return null
 
   return {
@@ -199,9 +191,9 @@ export function getDSTTestDates(timezone: string) {
     afterFall: new Date(fallBack.getTime() + 2 * 60 * 60 * 1000), // 2 hours after
 
     // Non-DST period (January)
-    winterDate: new Date('2025-01-15T12:00:00Z'),
+    winterDate: new Date("2025-01-15T12:00:00Z"),
     // DST period (July)
-    summerDate: new Date('2025-07-15T12:00:00Z'),
+    summerDate: new Date("2025-07-15T12:00:00Z"),
   }
 }
 
@@ -213,15 +205,15 @@ export function formatWithDSTInfo(date: Date, timezone: string): string {
   const offset = getTimezoneOffset(date, timezone)
   const zonedDate = toZonedTime(date, timezone)
 
-  const timeStr = zonedDate.toLocaleTimeString('en-US', {
+  const timeStr = zonedDate.toLocaleTimeString("en-US", {
     hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: timezone,
   })
 
-  const offsetStr = `UTC${offset >= 0 ? '+' : ''}${offset}`
-  const dstStr = inDST ? 'DST' : 'ST'
+  const offsetStr = `UTC${offset >= 0 ? "+" : ""}${offset}`
+  const dstStr = inDST ? "DST" : "ST"
 
   return `${timeStr} ${offsetStr} (${dstStr})`
 }
@@ -248,25 +240,17 @@ export function validateDSTSlots(
       const gapStart = yearTransitions.springForward
       const gapEnd = new Date(gapStart.getTime() + 60 * 60 * 1000)
 
-      const slotsInGap = slots.filter(
-        slot => slot >= gapStart && slot < gapEnd
-      )
+      const slotsInGap = slots.filter(slot => slot >= gapStart && slot < gapEnd)
 
       if (slotsInGap.length > 0) {
-        issues.push(
-          `Found ${slotsInGap.length} slots in DST gap (should be none)`
-        )
+        issues.push(`Found ${slotsInGap.length} slots in DST gap (should be none)`)
       }
     }
 
     if (yearTransitions?.fallBack) {
       // During fall back, there should be duplicate hour
-      const duplicateHourStart = new Date(
-        yearTransitions.fallBack.getTime() - 60 * 60 * 1000
-      )
-      const duplicateHourEnd = new Date(
-        yearTransitions.fallBack.getTime() + 60 * 60 * 1000
-      )
+      const duplicateHourStart = new Date(yearTransitions.fallBack.getTime() - 60 * 60 * 1000)
+      const duplicateHourEnd = new Date(yearTransitions.fallBack.getTime() + 60 * 60 * 1000)
 
       const slotsInDuplicate = slots.filter(
         slot => slot >= duplicateHourStart && slot < duplicateHourEnd

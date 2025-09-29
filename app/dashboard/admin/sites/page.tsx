@@ -166,7 +166,9 @@ export default function AdminSitesPage() {
           <div className="p-16 text-center">
             <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-card-foreground">No sites configured yet</p>
-            <p className="text-sm text-muted-foreground mt-2">Add your first office location to get started</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Add your first office location to get started
+            </p>
           </div>
         ) : (
           <table className="w-full">
@@ -179,7 +181,7 @@ export default function AdminSitesPage() {
               </tr>
             </thead>
             <tbody>
-              {sites.map((site) => (
+              {sites.map(site => (
                 <tr key={site.id} className="border-b border-border/50 hover:bg-accent/50">
                   <td className="p-4">
                     <div className="flex items-center gap-2">
@@ -230,9 +232,7 @@ export default function AdminSitesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Site</DialogTitle>
-            <DialogDescription>
-              Add a new office location with its timezone
-            </DialogDescription>
+            <DialogDescription>Add a new office location with its timezone</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -240,7 +240,7 @@ export default function AdminSitesPage() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., San Francisco"
               />
             </div>
@@ -248,13 +248,13 @@ export default function AdminSitesPage() {
               <Label htmlFor="timezone">Timezone</Label>
               <Select
                 value={formData.timezone}
-                onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                onValueChange={value => setFormData({ ...formData, timezone: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a timezone" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUPPORTED_TIMEZONES.map((tz) => (
+                  {SUPPORTED_TIMEZONES.map(tz => (
                     <SelectItem key={tz.value} value={tz.value}>
                       {tz.label}
                     </SelectItem>
@@ -279,9 +279,7 @@ export default function AdminSitesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Site</DialogTitle>
-            <DialogDescription>
-              Update site information
-            </DialogDescription>
+            <DialogDescription>Update site information</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -289,20 +287,20 @@ export default function AdminSitesPage() {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-timezone">Timezone</Label>
               <Select
                 value={formData.timezone}
-                onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                onValueChange={value => setFormData({ ...formData, timezone: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUPPORTED_TIMEZONES.map((tz) => (
+                  {SUPPORTED_TIMEZONES.map(tz => (
                     <SelectItem key={tz.value} value={tz.value}>
                       {tz.label}
                     </SelectItem>

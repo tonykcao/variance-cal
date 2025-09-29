@@ -2,8 +2,8 @@
  * Data access layer for bookings
  */
 
-import { prisma } from '@/lib/db';
-import { Prisma } from '@prisma/client';
+import { prisma } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 
 /**
  * Get booked slots for rooms in a date range
@@ -41,27 +41,31 @@ export async function getBookedSlots(
         },
       },
     },
-  });
+  })
 
   // Group by room ID
-  const bookedByRoom = new Map<string, Map<string, { isOwnBooking?: boolean; isAttending?: boolean }>>();
+  const bookedByRoom = new Map<
+    string,
+    Map<string, { isOwnBooking?: boolean; isAttending?: boolean }>
+  >()
 
   for (const roomId of roomIds) {
-    bookedByRoom.set(roomId, new Map());
+    bookedByRoom.set(roomId, new Map())
   }
 
   for (const slot of slots) {
-    const roomSlots = bookedByRoom.get(slot.roomId);
+    const roomSlots = bookedByRoom.get(slot.roomId)
     if (roomSlots) {
-      const slotKey = slot.slotStartUtc.toISOString();
-      const isOwnBooking = currentUserId ? slot.booking.ownerId === currentUserId : false;
-      const isAttending = currentUserId ?
-        slot.booking.attendees.some(a => a.userId === currentUserId) : false;
-      roomSlots.set(slotKey, { isOwnBooking, isAttending });
+      const slotKey = slot.slotStartUtc.toISOString()
+      const isOwnBooking = currentUserId ? slot.booking.ownerId === currentUserId : false
+      const isAttending = currentUserId
+        ? slot.booking.attendees.some(a => a.userId === currentUserId)
+        : false
+      roomSlots.set(slotKey, { isOwnBooking, isAttending })
     }
   }
 
-  return bookedByRoom;
+  return bookedByRoom
 }
 
 /**
@@ -69,27 +73,21 @@ export async function getBookedSlots(
  * @param userId - User ID
  * @param scope - 'upcoming' or 'past'
  */
-export async function getUserBookings(
-  userId: string,
-  scope: 'upcoming' | 'past' = 'upcoming'
-) {
-  const now = new Date();
+export async function getUserBookings(userId: string, scope: "upcoming" | "past" = "upcoming") {
+  const now = new Date()
 
   const where: Prisma.BookingWhereInput = {
-    OR: [
-      { ownerId: userId },
-      { attendees: { some: { userId } } },
-    ],
+    OR: [{ ownerId: userId }, { attendees: { some: { userId } } }],
     // Include cancelled bookings so users can see their booking history
     // canceledAt can be null or have a value
-  };
+  }
 
-  if (scope === 'upcoming') {
+  if (scope === "upcoming") {
     // For upcoming, show all bookings that haven't ended yet (including cancelled)
-    where.endUtc = { gt: now };
+    where.endUtc = { gt: now }
   } else {
     // For past, show all bookings that have ended (including cancelled)
-    where.endUtc = { lte: now };
+    where.endUtc = { lte: now }
   }
 
   const bookings = await prisma.booking.findMany({
@@ -108,11 +106,11 @@ export async function getUserBookings(
       },
     },
     orderBy: {
-      startUtc: scope === 'upcoming' ? 'asc' : 'desc',
+      startUtc: scope === "upcoming" ? "asc" : "desc",
     },
-  });
+  })
 
-  return bookings;
+  return bookings
 }
 
 /**
@@ -136,9 +134,9 @@ export async function getBookingById(bookingId: string) {
       },
       slots: true,
     },
-  });
+  })
 
-  return booking;
+  return booking
 }
 
 /**
@@ -147,94 +145,114 @@ export async function getBookingById(bookingId: string) {
  * @returns Created booking or error
  */
 export async function createBooking(data: {
-  roomId: string;
-  ownerId: string;
-  startUtc: Date;
-  endUtc: Date;
-  slots: Date[];
-  attendeeIds?: string[];
-  notes?: string;
+  roomId: string
+  ownerId: string
+  startUtc: Date
+  endUtc: Date
+  slots: Date[]
+  attendeeIds?: string[]
+  notes?: string
 }) {
-  try {
-    const booking = await prisma.$transaction(async (tx) => {
-      // Create the booking
-      const newBooking = await tx.booking.create({
-        data: {
-          roomId: data.roomId,
-          ownerId: data.ownerId,
-          startUtc: data.startUtc,
-          endUtc: data.endUtc,
-          notes: data.notes,
-        },
-      });
+  const MAX_RETRIES = 3
+  let lastError: any
 
-      // Create booking slots (unique constraint will prevent double booking)
-      await tx.bookingSlot.createMany({
-        data: data.slots.map((slotStart) => ({
-          bookingId: newBooking.id,
-          roomId: data.roomId,
-          slotStartUtc: slotStart,
-        })),
-      });
-
-      // Add attendees if provided
-      if (data.attendeeIds && data.attendeeIds.length > 0) {
-        await tx.bookingAttendee.createMany({
-          data: data.attendeeIds.map((userId) => ({
-            bookingId: newBooking.id,
-            userId,
-          })),
-        });
-      }
-
-      // Log activity
-      await tx.activityLog.create({
-        data: {
-          actorId: data.ownerId,
-          action: 'BOOKING_CREATED',
-          entityType: 'booking',
-          entityId: newBooking.id,
-          metadata: {
+  // Retry logic for handling deadlocks
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const booking = await prisma.$transaction(async tx => {
+        // Create the booking
+        const newBooking = await tx.booking.create({
+          data: {
             roomId: data.roomId,
-            startUtc: data.startUtc.toISOString(),
-            endUtc: data.endUtc.toISOString(),
-            attendeeIds: data.attendeeIds || [],
+            ownerId: data.ownerId,
+            startUtc: data.startUtc,
+            endUtc: data.endUtc,
+            notes: data.notes,
           },
-        },
-      });
+        })
 
-      // Return the complete booking
-      return await tx.booking.findUnique({
-        where: { id: newBooking.id },
-        include: {
-          room: {
-            include: {
-              site: true,
+        // Create booking slots (unique constraint will prevent double booking)
+        await tx.bookingSlot.createMany({
+          data: data.slots.map(slotStart => ({
+            bookingId: newBooking.id,
+            roomId: data.roomId,
+            slotStartUtc: slotStart,
+          })),
+        })
+
+        // Add attendees if provided
+        if (data.attendeeIds && data.attendeeIds.length > 0) {
+          await tx.bookingAttendee.createMany({
+            data: data.attendeeIds.map(userId => ({
+              bookingId: newBooking.id,
+              userId,
+            })),
+          })
+        }
+
+        // Log activity
+        await tx.activityLog.create({
+          data: {
+            actorId: data.ownerId,
+            action: "BOOKING_CREATED",
+            entityType: "booking",
+            entityId: newBooking.id,
+            metadata: {
+              roomId: data.roomId,
+              startUtc: data.startUtc.toISOString(),
+              endUtc: data.endUtc.toISOString(),
+              attendeeIds: data.attendeeIds || [],
+            },
+        },
+      })
+
+        // Return the complete booking
+        return await tx.booking.findUnique({
+          where: { id: newBooking.id },
+          include: {
+            room: {
+              include: {
+                site: true,
+              },
+            },
+            owner: true,
+            attendees: {
+              include: {
+                user: true,
+              },
             },
           },
-          owner: true,
-          attendees: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
-    });
+        })
+      })
 
-    return { success: true, booking };
-  } catch (error) {
-    // Check if it's a unique constraint violation (double booking)
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return {
-          success: false,
-          error: 'Room is already booked for one or more of the selected time slots',
-        };
+      return { success: true, booking }
+    } catch (error) {
+      lastError = error
+
+      // Check if it's a unique constraint violation (double booking)
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return {
+            success: false,
+            error: "Room is already booked for one or more of the selected time slots",
+          }
+        }
+        // Check if it's a deadlock error - retry if we have attempts left
+        if (error.code === "P2034" && attempt < MAX_RETRIES) {
+          // Add exponential backoff delay before retry
+          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt - 1)))
+          continue
+        }
+      }
+      // For non-retryable errors or last attempt, throw immediately
+      if (attempt === MAX_RETRIES) {
+        throw error
       }
     }
-    throw error;
   }
+
+  // If we exhausted all retries, throw the last error
+  throw lastError
 }
 
 /**
@@ -243,32 +261,32 @@ export async function createBooking(data: {
  * @param userId - User ID performing the cancellation
  */
 export async function cancelBooking(bookingId: string, userId: string) {
-  const now = new Date();
+  const now = new Date()
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Get the booking
       const booking = await tx.booking.findUnique({
         where: { id: bookingId },
         include: {
           owner: true,
         },
-      });
+      })
 
       if (!booking) {
-        return { success: false, error: 'Booking not found' };
+        return { success: false, error: "Booking not found" }
       }
 
       // Check if already canceled
       if (booking.canceledAt) {
-        return { success: false, error: 'Booking is already canceled' };
+        return { success: false, error: "Booking is already canceled" }
       }
 
       // Update booking with canceledAt
       await tx.booking.update({
         where: { id: bookingId },
         data: { canceledAt: now },
-      });
+      })
 
       // Delete future slots to free them up
       await tx.bookingSlot.deleteMany({
@@ -276,28 +294,28 @@ export async function cancelBooking(bookingId: string, userId: string) {
           bookingId,
           slotStartUtc: { gte: now },
         },
-      });
+      })
 
       // Log activity
       await tx.activityLog.create({
         data: {
           actorId: userId,
-          action: 'BOOKING_CANCELED',
-          entityType: 'booking',
+          action: "BOOKING_CANCELED",
+          entityType: "booking",
           entityId: bookingId,
           metadata: {
             canceledAt: now.toISOString(),
-            futureSlots: 'freed',
+            futureSlots: "freed",
           },
         },
-      });
+      })
 
-      return { success: true };
-    });
+      return { success: true }
+    })
 
-    return result;
+    return result
   } catch (error) {
-    throw error;
+    throw error
   }
 }
 
@@ -306,36 +324,33 @@ export async function cancelBooking(bookingId: string, userId: string) {
  * @param filters - Optional filters
  */
 export async function getAllBookings(filters?: {
-  siteId?: string;
-  roomId?: string;
-  userId?: string;
-  from?: Date;
-  to?: Date;
+  siteId?: string
+  roomId?: string
+  userId?: string
+  from?: Date
+  to?: Date
 }) {
-  const where: Prisma.BookingWhereInput = {};
+  const where: Prisma.BookingWhereInput = {}
 
   if (filters?.roomId) {
-    where.roomId = filters.roomId;
+    where.roomId = filters.roomId
   } else if (filters?.siteId) {
     where.room = {
       siteId: filters.siteId,
-    };
+    }
   }
 
   if (filters?.userId) {
-    where.OR = [
-      { ownerId: filters.userId },
-      { attendees: { some: { userId: filters.userId } } },
-    ];
+    where.OR = [{ ownerId: filters.userId }, { attendees: { some: { userId: filters.userId } } }]
   }
 
   if (filters?.from || filters?.to) {
-    where.startUtc = {};
+    where.startUtc = {}
     if (filters.from) {
-      where.startUtc.gte = filters.from;
+      where.startUtc.gte = filters.from
     }
     if (filters.to) {
-      where.startUtc.lte = filters.to;
+      where.startUtc.lte = filters.to
     }
   }
 
@@ -355,11 +370,11 @@ export async function getAllBookings(filters?: {
       },
     },
     orderBy: {
-      startUtc: 'desc',
+      startUtc: "desc",
     },
-  });
+  })
 
-  return bookings;
+  return bookings
 }
 
 /**
@@ -371,18 +386,18 @@ export async function getAllBookings(filters?: {
 export async function canUserModifyBooking(
   bookingId: string,
   userId: string,
-  userRole: 'USER' | 'ADMIN'
+  userRole: "USER" | "ADMIN"
 ): Promise<boolean> {
   // Admins can modify any booking
-  if (userRole === 'ADMIN') {
-    return true;
+  if (userRole === "ADMIN") {
+    return true
   }
 
   // Check if user is the owner
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     select: { ownerId: true },
-  });
+  })
 
-  return booking?.ownerId === userId;
+  return booking?.ownerId === userId
 }

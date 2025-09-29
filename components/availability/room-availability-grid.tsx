@@ -50,13 +50,13 @@ export function RoomAvailabilityGrid({
     endIndex?: number
   }>({})
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState<{roomId: string, index: number} | null>(null)
+  const [dragStart, setDragStart] = useState<{ roomId: string; index: number } | null>(null)
 
   const handleMouseDown = (roomId: string, slotIndex: number, slot: TimeSlot) => {
     if (!slot.available || slot.isPast || slot.isClosed) return
 
     setIsDragging(true)
-    setDragStart({roomId, index: slotIndex})
+    setDragStart({ roomId, index: slotIndex })
     setSelectedSlots({
       roomId,
       startIndex: slotIndex,
@@ -79,8 +79,13 @@ export function RoomAvailabilityGrid({
   }
 
   const handleMouseUp = () => {
-    if (isDragging && selectedSlots.roomId && selectedSlots.startIndex !== undefined && selectedSlots.endIndex !== undefined) {
-      const roomAvail = availability.find((a) => a.room.id === selectedSlots.roomId)
+    if (
+      isDragging &&
+      selectedSlots.roomId &&
+      selectedSlots.startIndex !== undefined &&
+      selectedSlots.endIndex !== undefined
+    ) {
+      const roomAvail = availability.find(a => a.room.id === selectedSlots.roomId)
       if (roomAvail) {
         const startSlot = roomAvail.slots[selectedSlots.startIndex]
         const endSlot = roomAvail.slots[selectedSlots.endIndex]
@@ -108,11 +113,11 @@ export function RoomAvailabilityGrid({
   const convertToUserTime = (roomTime: string, roomTimezone: string, userTimezone: string) => {
     try {
       // Create a date object for today with the room time
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString().split("T")[0]
       const roomDateTime = new Date(`${today}T${roomTime}:00`)
 
       // Convert from room timezone to UTC, then to user timezone
-      const userTime = formatInTimeZone(roomDateTime, userTimezone, 'HH:mm')
+      const userTime = formatInTimeZone(roomDateTime, userTimezone, "HH:mm")
       return userTime
     } catch (error) {
       return roomTime // fallback to room time if conversion fails
@@ -125,11 +130,7 @@ export function RoomAvailabilityGrid({
     timeLabels.push(`${hour.toString().padStart(2, "0")}:00`)
   }
 
-  const handleSlotClick = (
-    roomId: string,
-    slotIndex: number,
-    slot: TimeSlot
-  ) => {
+  const handleSlotClick = (roomId: string, slotIndex: number, slot: TimeSlot) => {
     if (!slot.available || slot.isPast || slot.isClosed) return
 
     if (!selectedSlots.roomId || selectedSlots.roomId !== roomId) {
@@ -145,15 +146,13 @@ export function RoomAvailabilityGrid({
       const end = Math.max(selectedSlots.startIndex, slotIndex)
 
       // Find the room and slots
-      const roomAvail = availability.find((a) => a.room.id === roomId)
+      const roomAvail = availability.find(a => a.room.id === roomId)
       if (roomAvail) {
         const startTime = roomAvail.slots[start].time
         const endSlot = roomAvail.slots[end]
         // Add 30 minutes to get end time
         const [endHour, endMin] = endSlot.time.split(":").map(Number)
-        const endTime = `${endHour.toString().padStart(2, "0")}:${
-          endMin === 0 ? "30" : "00"
-        }`
+        const endTime = `${endHour.toString().padStart(2, "0")}:${endMin === 0 ? "30" : "00"}`
         if (endMin === 30) {
           const nextHour = (endHour + 1).toString().padStart(2, "0")
           onSlotSelect(roomAvail.room, startTime, `${nextHour}:00`)
@@ -169,11 +168,7 @@ export function RoomAvailabilityGrid({
 
   const isSlotSelected = (roomId: string, slotIndex: number) => {
     if (selectedSlots.roomId !== roomId) return false
-    if (
-      selectedSlots.startIndex === undefined ||
-      selectedSlots.endIndex === undefined
-    )
-      return false
+    if (selectedSlots.startIndex === undefined || selectedSlots.endIndex === undefined) return false
 
     const start = Math.min(selectedSlots.startIndex, selectedSlots.endIndex)
     const end = Math.max(selectedSlots.startIndex, selectedSlots.endIndex)
@@ -184,22 +179,24 @@ export function RoomAvailabilityGrid({
     return (
       <div className="rounded-lg border bg-card p-12 text-center">
         <p className="text-muted-foreground">
-          No rooms found. Try widening time window, lowering capacity, or
-          selecting more sites.
+          No rooms found. Try widening time window, lowering capacity, or selecting more sites.
         </p>
       </div>
     )
   }
 
   // Group rooms by site
-  const roomsBySite = availability.reduce((acc, item) => {
-    const siteName = item.room.siteName
-    if (!acc[siteName]) {
-      acc[siteName] = []
-    }
-    acc[siteName].push(item)
-    return acc
-  }, {} as Record<string, RoomAvailability[]>)
+  const roomsBySite = availability.reduce(
+    (acc, item) => {
+      const siteName = item.room.siteName
+      if (!acc[siteName]) {
+        acc[siteName] = []
+      }
+      acc[siteName].push(item)
+      return acc
+    },
+    {} as Record<string, RoomAvailability[]>
+  )
 
   return (
     <div className="space-y-6">
@@ -245,9 +242,7 @@ export function RoomAvailabilityGrid({
         <div key={siteName} className="rounded-lg border bg-card">
           <div className="border-b p-4">
             <h3 className="font-semibold text-card-foreground">{siteName}</h3>
-            <p className="text-sm text-muted-foreground">
-              {rooms[0].room.siteTimezone}
-            </p>
+            <p className="text-sm text-muted-foreground">{rooms[0].room.siteTimezone}</p>
           </div>
 
           <div className="overflow-x-auto">
@@ -256,17 +251,14 @@ export function RoomAvailabilityGrid({
               <div className="mb-2 grid grid-cols-[200px_repeat(48,_20px)] gap-0">
                 <div /> {/* Empty cell for room name column */}
                 {timeLabels.map((label, i) => (
-                  <div
-                    key={label}
-                    className="col-span-2 text-center text-xs text-muted-foreground"
-                  >
+                  <div key={label} className="col-span-2 text-center text-xs text-muted-foreground">
                     {i % 2 === 0 && label}
                   </div>
                 ))}
               </div>
 
               {/* Room rows */}
-              {rooms.map((roomAvail) => (
+              {rooms.map(roomAvail => (
                 <div
                   key={roomAvail.room.id}
                   className="mb-3 grid grid-cols-[200px_repeat(48,_20px)] gap-0"
@@ -284,9 +276,7 @@ export function RoomAvailabilityGrid({
                   {roomAvail.slots.map((slot, i) => (
                     <button
                       key={i}
-                      onClick={() =>
-                        handleSlotClick(roomAvail.room.id, i, slot)
-                      }
+                      onClick={() => handleSlotClick(roomAvail.room.id, i, slot)}
                       disabled={!slot.available || slot.isPast || slot.isClosed}
                       className={cn(
                         "h-8 border-l border-t border-b transition-colors cursor-pointer select-none",
@@ -294,9 +284,22 @@ export function RoomAvailabilityGrid({
                         slot.available && !slot.isPast && !slot.isClosed
                           ? "bg-green-800 hover:bg-green-700 border-green-700 text-green-100"
                           : "",
-                        !slot.available && !slot.isPast && !slot.isClosed && slot.isOwnBooking && "bg-blue-800 border-blue-700 text-blue-100",
-                        !slot.available && !slot.isPast && !slot.isClosed && slot.isAttending && "bg-blue-700 border-blue-600 text-blue-100",
-                        !slot.available && !slot.isPast && !slot.isClosed && !slot.isOwnBooking && !slot.isAttending && "bg-red-800 border-red-700 text-red-100",
+                        !slot.available &&
+                          !slot.isPast &&
+                          !slot.isClosed &&
+                          slot.isOwnBooking &&
+                          "bg-blue-800 border-blue-700 text-blue-100",
+                        !slot.available &&
+                          !slot.isPast &&
+                          !slot.isClosed &&
+                          slot.isAttending &&
+                          "bg-blue-700 border-blue-600 text-blue-100",
+                        !slot.available &&
+                          !slot.isPast &&
+                          !slot.isClosed &&
+                          !slot.isOwnBooking &&
+                          !slot.isAttending &&
+                          "bg-red-800 border-red-700 text-red-100",
                         slot.isClosed && "bg-gray-700 border-gray-600 text-gray-300",
                         slot.isPast && "bg-gray-800 border-gray-700 text-gray-400",
                         isSlotSelected(roomAvail.room.id, i) &&
@@ -309,14 +312,14 @@ export function RoomAvailabilityGrid({
                         slot.available
                           ? "Available"
                           : slot.isClosed
-                          ? "Closed"
-                          : slot.isPast
-                          ? "Past"
-                          : slot.isOwnBooking
-                          ? "Your Booking"
-                          : slot.isAttending
-                          ? "You're Attending"
-                          : "Other's Booking"
+                            ? "Closed"
+                            : slot.isPast
+                              ? "Past"
+                              : slot.isOwnBooking
+                                ? "Your Booking"
+                                : slot.isAttending
+                                  ? "You're Attending"
+                                  : "Other's Booking"
                       }`}
                     />
                   ))}
@@ -324,7 +327,6 @@ export function RoomAvailabilityGrid({
               ))}
             </div>
           </div>
-
         </div>
       ))}
     </div>

@@ -7,12 +7,14 @@ You are working on NookBook, a room booking system. This guide helps you underst
 ## IMMEDIATE UNDERSTANDING
 
 ### What This System Does
+
 - Books meeting rooms across 4 global sites (SF, NY, London, Shanghai)
 - Handles timezone conversions automatically
 - Prevents double-booking through database constraints
 - 30-minute slot granularity
 
 ### Core User Flow
+
 1. User searches for available rooms by date/capacity/site
 2. User selects time slots in a visual grid
 3. User confirms booking with optional attendees
@@ -60,7 +62,7 @@ ActivityLog { actorId, action, entityType, entityId, metadata }
 
 ```typescript
 // Input: User provides local time
-const localTime = "2025-09-27T10:00"  // User sees this
+const localTime = "2025-09-27T10:00" // User sees this
 
 // Convert to UTC for storage
 const utcTime = localToUtc(localTime, room.site.timezone)
@@ -94,13 +96,14 @@ await prisma.$transaction(async (tx) => {
 ## COMMON OPERATIONS
 
 ### Check Availability
+
 ```typescript
 // 1. Get rooms for sites
-const rooms = await prisma.room.findMany({ where: { siteId: { in: siteIds }}})
+const rooms = await prisma.room.findMany({ where: { siteId: { in: siteIds } } })
 
 // 2. Get occupied slots
 const occupied = await prisma.bookingSlot.findMany({
-  where: { roomId: { in: roomIds }, slotStartUtc: { gte: start, lt: end }}
+  where: { roomId: { in: roomIds }, slotStartUtc: { gte: start, lt: end } },
 })
 
 // 3. Calculate available slots
@@ -108,6 +111,7 @@ const available = allSlots.filter(slot => !occupied.has(slot))
 ```
 
 ### Create Booking
+
 ```typescript
 // 1. Validate times align to 30-min boundaries
 const snapped = snapTo30Minutes(inputTime)
@@ -119,13 +123,14 @@ if (!isWithinOpeningHours(room, snapped)) throw Error
 ```
 
 ### Cancel Booking
+
 ```typescript
 // 1. Set canceledAt timestamp
-await prisma.booking.update({ where: { id }, data: { canceledAt: new Date() }})
+await prisma.booking.update({ where: { id }, data: { canceledAt: new Date() } })
 
 // 2. Delete future slots only
 await prisma.bookingSlot.deleteMany({
-  where: { bookingId: id, slotStartUtc: { gte: new Date() }}
+  where: { bookingId: id, slotStartUtc: { gte: new Date() } },
 })
 ```
 
@@ -248,6 +253,7 @@ npm run build      # Check production build
 ## MOCK AUTHENTICATION SYSTEM
 
 The system uses mock authentication for development:
+
 - User switcher in top navigation
 - Stores user ID in cookie
 - Middleware attaches user to requests
@@ -256,6 +262,7 @@ The system uses mock authentication for development:
 ## AGENT COMMUNICATION (ADVANCED)
 
 Note: The codebase includes multi-agent coordination tools (currently commented out):
+
 - `.agent-comm/` - Message passing between agents
 - `.agent-locks/` - Process locking
 - `scripts/agent-*.py` - Coordination scripts
@@ -265,6 +272,7 @@ These are for advanced multi-agent development workflows and can be ignored for 
 ## QUICK WINS
 
 If asked to improve the system, consider:
+
 1. Add email notifications for bookings
 2. Implement recurring bookings
 3. Add room amenities/features

@@ -28,46 +28,50 @@ export function UserSwitcher() {
         availableUsers = MOCK_USERS
       }
     } catch (error) {
-      console.warn("Using mock users, database not available:", error)
+      // Database not available, use mock
       availableUsers = MOCK_USERS
     }
 
     setUsers(availableUsers)
 
     // Get current user from cookie
-    const cookieValue = document.cookie
+    let cookieValue = document.cookie
       .split("; ")
       .find(row => row.startsWith("mock-user-id="))
       ?.split("=")[1]
 
+    // Decode the cookie value (handles %40 -> @)
     if (cookieValue) {
-      // Try to find user in available users
-      const user = availableUsers.find(u => u.id === cookieValue) || getUserById(cookieValue)
-      if (user) {
-        setCurrentUser(user)
-      } else {
-        // Cookie has invalid user, set default
-        setDefaultUser(availableUsers)
-      }
-    } else {
-      // No cookie set, use default user
-      setDefaultUser(availableUsers)
+      cookieValue = decodeURIComponent(cookieValue)
+    }
+
+    // If no cookie, set default
+    if (!cookieValue) {
+      const defaultUserId = "alice@example.com"
+      document.cookie = `mock-user-id=${encodeURIComponent(defaultUserId)}; path=/; sameSite=lax`
+      cookieValue = defaultUserId
+    }
+
+    // Find user in available users or fallback to mock
+    const user = availableUsers.find(u => u.id === cookieValue) ||
+                 getUserById(cookieValue) ||
+                 availableUsers[0]
+
+    if (user) {
+      setCurrentUser(user)
     }
   }
 
-  const setDefaultUser = (availableUsers: User[]) => {
-    const defaultUser = availableUsers.find(u => u.name === "alice-admin") ||
-                        availableUsers.find(u => u.email === "alice@example.com") ||
-                        availableUsers[0]
-    if (defaultUser) {
-      setCurrentUser(defaultUser)
-      document.cookie = `mock-user-id=${defaultUser.id}; path=/; sameSite=lax`
-    }
-  }
 
   const switchUser = (user: User) => {
-    // Set cookie
-    document.cookie = `mock-user-id=${user.id}; path=/; sameSite=lax`
+    // Only switch if different user
+    if (user.id === currentUser?.id) {
+      setIsOpen(false)
+      return
+    }
+
+    // Set cookie (encode to handle @ symbol)
+    document.cookie = `mock-user-id=${encodeURIComponent(user.id)}; path=/; sameSite=lax`
     setCurrentUser(user)
     setIsOpen(false)
     // Reload to apply new user context

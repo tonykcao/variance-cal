@@ -3,13 +3,13 @@
  * All functions work with UTC dates and timezone conversions
  */
 
-import { addMinutes, startOfDay, differenceInMinutes, format, parse } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { addMinutes, startOfDay, differenceInMinutes, format, parse } from "date-fns"
+import { toZonedTime, fromZonedTime } from "date-fns-tz"
 
 /**
  * Duration of each booking slot in minutes
  */
-export const SLOT_DURATION_MINUTES = 30 as const;
+export const SLOT_DURATION_MINUTES = 30 as const
 
 /**
  * Snap a date to the nearest 30-minute boundary
@@ -17,31 +17,31 @@ export const SLOT_DURATION_MINUTES = 30 as const;
  * @param direction - 'floor' rounds down, 'ceil' rounds up, 'round' rounds to nearest
  * @returns Date snapped to 30-minute boundary
  */
-export function snapTo30(date: Date, direction: 'floor' | 'ceil' | 'round' = 'floor'): Date {
-  const minutes = date.getMinutes();
-  const remainder = minutes % SLOT_DURATION_MINUTES;
+export function snapTo30(date: Date, direction: "floor" | "ceil" | "round" = "floor"): Date {
+  const minutes = date.getMinutes()
+  const remainder = minutes % SLOT_DURATION_MINUTES
 
-  if (remainder === 0) return date;
+  if (remainder === 0) return date
 
-  const baseDate = new Date(date);
+  const baseDate = new Date(date)
 
   switch (direction) {
-    case 'floor':
-      baseDate.setMinutes(minutes - remainder, 0, 0);
-      break;
-    case 'ceil':
-      baseDate.setMinutes(minutes + (SLOT_DURATION_MINUTES - remainder), 0, 0);
-      break;
-    case 'round':
+    case "floor":
+      baseDate.setMinutes(minutes - remainder, 0, 0)
+      break
+    case "ceil":
+      baseDate.setMinutes(minutes + (SLOT_DURATION_MINUTES - remainder), 0, 0)
+      break
+    case "round":
       if (remainder <= SLOT_DURATION_MINUTES / 2) {
-        baseDate.setMinutes(minutes - remainder, 0, 0);
+        baseDate.setMinutes(minutes - remainder, 0, 0)
       } else {
-        baseDate.setMinutes(minutes + (SLOT_DURATION_MINUTES - remainder), 0, 0);
+        baseDate.setMinutes(minutes + (SLOT_DURATION_MINUTES - remainder), 0, 0)
       }
-      break;
+      break
   }
 
-  return baseDate;
+  return baseDate
 }
 
 /**
@@ -51,24 +51,20 @@ export function snapTo30(date: Date, direction: 'floor' | 'ceil' | 'round' = 'fl
  * @param referenceDate - Reference date for time-only strings
  * @returns UTC Date
  */
-export function localToUtc(
-  localTimeStr: string,
-  timezone: string,
-  referenceDate?: Date
-): Date {
+export function localToUtc(localTimeStr: string, timezone: string, referenceDate?: Date): Date {
   // Handle full datetime strings
-  if (localTimeStr.includes('T')) {
-    const localDate = new Date(localTimeStr);
-    return fromZonedTime(localDate, timezone);
+  if (localTimeStr.includes("T")) {
+    const localDate = new Date(localTimeStr)
+    return fromZonedTime(localDate, timezone)
   }
 
   // Handle time-only strings (HH:mm)
-  const refDate = referenceDate || new Date();
-  const zonedRef = toZonedTime(refDate, timezone);
-  const [hours, minutes] = localTimeStr.split(':').map(Number);
+  const refDate = referenceDate || new Date()
+  const zonedRef = toZonedTime(refDate, timezone)
+  const [hours, minutes] = localTimeStr.split(":").map(Number)
 
-  zonedRef.setHours(hours, minutes, 0, 0);
-  return fromZonedTime(zonedRef, timezone);
+  zonedRef.setHours(hours, minutes, 0, 0)
+  return fromZonedTime(zonedRef, timezone)
 }
 
 /**
@@ -78,7 +74,7 @@ export function localToUtc(
  * @returns Date in specified timezone
  */
 export function utcToLocal(utcDate: Date, timezone: string): Date {
-  return toZonedTime(utcDate, timezone);
+  return toZonedTime(utcDate, timezone)
 }
 
 /**
@@ -91,10 +87,10 @@ export function utcToLocal(utcDate: Date, timezone: string): Date {
 export function formatInTimezone(
   utcDate: Date,
   timezone: string,
-  formatStr: string = 'yyyy-MM-dd HH:mm'
+  formatStr: string = "yyyy-MM-dd HH:mm"
 ): string {
-  const zonedDate = toZonedTime(utcDate, timezone);
-  return format(zonedDate, formatStr);
+  const zonedDate = toZonedTime(utcDate, timezone)
+  return format(zonedDate, formatStr)
 }
 
 /**
@@ -104,15 +100,15 @@ export function formatInTimezone(
  * @returns Array of UTC dates representing slot starts
  */
 export function enumerateSlots(startUtc: Date, endUtc: Date): Date[] {
-  const slots: Date[] = [];
-  let current = new Date(startUtc);
+  const slots: Date[] = []
+  let current = new Date(startUtc)
 
   while (current < endUtc) {
-    slots.push(new Date(current));
-    current = addMinutes(current, SLOT_DURATION_MINUTES);
+    slots.push(new Date(current))
+    current = addMinutes(current, SLOT_DURATION_MINUTES)
   }
 
-  return slots;
+  return slots
 }
 
 /**
@@ -123,11 +119,11 @@ export function enumerateSlots(startUtc: Date, endUtc: Date): Date[] {
  */
 export function getDayInTimezone(utcDate: Date, timezone: string): number {
   // Format the date in the target timezone to get the actual day
-  const dateStr = formatInTimezone(utcDate, timezone, 'yyyy-MM-dd');
+  const dateStr = formatInTimezone(utcDate, timezone, "yyyy-MM-dd")
   // Parse it back as a date to get the day of week
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const localDate = new Date(year, month - 1, day);
-  return localDate.getDay();
+  const [year, month, day] = dateStr.split("-").map(Number)
+  const localDate = new Date(year, month - 1, day)
+  return localDate.getDay()
 }
 
 /**
@@ -137,9 +133,9 @@ export function getDayInTimezone(utcDate: Date, timezone: string): number {
  * @returns Weekday name in lowercase (mon, tue, wed, thu, fri, sat, sun)
  */
 export function getWeekdayInTimezone(utcDate: Date, timezone: string): string {
-  const day = getDayInTimezone(utcDate, timezone);
-  const weekdays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-  return weekdays[day];
+  const day = getDayInTimezone(utcDate, timezone)
+  const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+  return weekdays[day]
 }
 
 /**
@@ -149,15 +145,11 @@ export function getWeekdayInTimezone(utcDate: Date, timezone: string): string {
  * @param timezone - IANA timezone identifier
  * @returns True if dates are on the same day
  */
-export function isSameDayInTimezone(
-  date1: Date,
-  date2: Date,
-  timezone: string
-): boolean {
+export function isSameDayInTimezone(date1: Date, date2: Date, timezone: string): boolean {
   // Format both dates in the target timezone to compare the actual date strings
-  const date1Str = formatInTimezone(date1, timezone, 'yyyy-MM-dd');
-  const date2Str = formatInTimezone(date2, timezone, 'yyyy-MM-dd');
-  return date1Str === date2Str;
+  const date1Str = formatInTimezone(date1, timezone, "yyyy-MM-dd")
+  const date2Str = formatInTimezone(date2, timezone, "yyyy-MM-dd")
+  return date1Str === date2Str
 }
 
 /**
@@ -167,9 +159,9 @@ export function isSameDayInTimezone(
  * @returns UTC date representing start of day in timezone
  */
 export function getStartOfDayInTimezone(date: Date, timezone: string): Date {
-  const localDate = toZonedTime(date, timezone);
-  const startLocal = startOfDay(localDate);
-  return fromZonedTime(startLocal, timezone);
+  const localDate = toZonedTime(date, timezone)
+  const startLocal = startOfDay(localDate)
+  return fromZonedTime(startLocal, timezone)
 }
 
 /**
@@ -178,8 +170,8 @@ export function getStartOfDayInTimezone(date: Date, timezone: string): Date {
  * @returns Object with hours and minutes
  */
 export function parseTimeString(timeStr: string): { hours: number; minutes: number } {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return { hours, minutes };
+  const [hours, minutes] = timeStr.split(":").map(Number)
+  return { hours, minutes }
 }
 
 /**
@@ -189,14 +181,10 @@ export function parseTimeString(timeStr: string): { hours: number; minutes: numb
  * @param timezone - IANA timezone identifier
  * @returns UTC date with the specified time
  */
-export function combineDateAndTime(
-  date: Date,
-  timeStr: string,
-  timezone: string
-): Date {
-  const localDate = toZonedTime(date, timezone);
-  const { hours, minutes } = parseTimeString(timeStr);
+export function combineDateAndTime(date: Date, timeStr: string, timezone: string): Date {
+  const localDate = toZonedTime(date, timezone)
+  const { hours, minutes } = parseTimeString(timeStr)
 
-  localDate.setHours(hours, minutes, 0, 0);
-  return fromZonedTime(localDate, timezone);
+  localDate.setHours(hours, minutes, 0, 0)
+  return fromZonedTime(localDate, timezone)
 }

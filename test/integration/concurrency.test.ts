@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PrismaClient } from '@prisma/client'
-import { createTestUser, createTestSite, createTestRoom, cleanDatabase } from '../fixtures'
-import { addDays, setHours, setMinutes } from 'date-fns'
-import { fromZonedTime } from 'date-fns-tz'
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { createTestUser, createTestSite, createTestRoom, cleanDatabase, getUniqueTestId } from "../fixtures"
+import { addDays, setHours, setMinutes } from "date-fns"
+import { fromZonedTime } from "date-fns-tz"
+import { getTestPrismaClient } from "../helpers/db"
 
-const prisma = new PrismaClient()
+const prisma = getTestPrismaClient()
 
-describe('Concurrency Integration Tests', () => {
+describe("Concurrency Integration Tests", () => {
   let users: any[] = []
   let site: any
   let room: any
@@ -14,54 +14,57 @@ describe('Concurrency Integration Tests', () => {
   beforeEach(async () => {
     await cleanDatabase()
 
-    // Create test users
+    // Use unique IDs to avoid conflicts
+    const testId = getUniqueTestId()
+
+    // Create test users with unique emails
     users = await Promise.all([
       createTestUser({
-        email: 'user1@test.com',
-        name: 'User 1',
-        role: 'USER',
-        timezone: 'America/New_York',
+        email: `user1_${testId}@test.com`,
+        name: `User 1 ${testId}`,
+        role: "USER",
+        timezone: "America/New_York",
       }),
       createTestUser({
-        email: 'user2@test.com',
-        name: 'User 2',
-        role: 'USER',
-        timezone: 'America/New_York',
+        email: `user2_${testId}@test.com`,
+        name: `User 2 ${testId}`,
+        role: "USER",
+        timezone: "America/New_York",
       }),
       createTestUser({
-        email: 'user3@test.com',
-        name: 'User 3',
-        role: 'USER',
-        timezone: 'America/New_York',
+        email: `user3_${testId}@test.com`,
+        name: `User 3 ${testId}`,
+        role: "USER",
+        timezone: "America/New_York",
       }),
       createTestUser({
-        email: 'admin@test.com',
-        name: 'Admin',
-        role: 'ADMIN',
-        timezone: 'America/New_York',
+        email: `admin_${testId}@test.com`,
+        name: `Admin ${testId}`,
+        role: "ADMIN",
+        timezone: "America/New_York",
       }),
     ])
 
-    // Create test site and room
+    // Create test site and room with unique names
     site = await createTestSite({
-      name: 'Test Site',
-      timezone: 'America/New_York',
+      name: `Test Site ${testId}`,
+      timezone: "America/New_York",
     })
 
     room = await createTestRoom({
       siteId: site.id,
-      name: 'Conference Room',
+      name: `Conference Room ${testId}`,
       capacity: 10,
     })
   })
 
   afterEach(async () => {
     await cleanDatabase()
-    await prisma.$disconnect()
+    // Don't disconnect shared client
   })
 
-  describe('Double-Booking Prevention', () => {
-    it('should prevent double-booking when multiple users book simultaneously', async () => {
+  describe("Double-Booking Prevention", () => {
+    it("should prevent double-booking when multiple users book simultaneously", async () => {
       const tomorrow = addDays(new Date(), 1)
       const startTime = setMinutes(setHours(tomorrow, 14), 0)
       const endTime = setMinutes(setHours(tomorrow, 15), 30)
@@ -79,41 +82,43 @@ describe('Concurrency Integration Tests', () => {
 
       // Simulate concurrent booking attempts
       const bookingPromises = users.slice(0, 3).map(user =>
-        prisma.$transaction(async (tx) => {
-          // Create booking
-          const booking = await tx.booking.create({
-            data: {
-              roomId: room.id,
-              ownerId: user.id,
-              startUtc,
-              endUtc,
-            },
-          })
+        prisma
+          .$transaction(async tx => {
+            // Create booking
+            const booking = await tx.booking.create({
+              data: {
+                roomId: room.id,
+                ownerId: user.id,
+                startUtc,
+                endUtc,
+              },
+            })
 
-          // Create slots - this will fail for duplicates
-          await tx.bookingSlot.createMany({
-            data: slots.map(slotStartUtc => ({
-              bookingId: booking.id,
-              roomId: room.id,
-              slotStartUtc,
-            })),
-          })
+            // Create slots - this will fail for duplicates
+            await tx.bookingSlot.createMany({
+              data: slots.map(slotStartUtc => ({
+                bookingId: booking.id,
+                roomId: room.id,
+                slotStartUtc,
+              })),
+            })
 
-          // Log success
-          await tx.activityLog.create({
-            data: {
-              actorId: user.id,
-              action: 'BOOKING_CREATED',
-              entityType: 'booking',
-              entityId: booking.id,
-              metadata: { concurrent: true },
-            },
-          })
+            // Log success
+            await tx.activityLog.create({
+              data: {
+                actorId: user.id,
+                action: "BOOKING_CREATED",
+                entityType: "booking",
+                entityId: booking.id,
+                metadata: { concurrent: true },
+              },
+            })
 
-          return { success: true, booking }
-        }).catch(error => {
-          return { success: false, error: (error as Error).message }
-        })
+            return { success: true, booking }
+          })
+          .catch(error => {
+            return { success: false, error: (error as Error).message }
+          })
       )
 
       const results = await Promise.all(bookingPromises)
@@ -138,7 +143,7 @@ describe('Concurrency Integration Tests', () => {
       expect(bookings).toHaveLength(1)
     })
 
-    it('should handle rapid sequential booking attempts', async () => {
+    it("should handle rapid sequential booking attempts", async () => {
       const tomorrow = addDays(new Date(), 1)
       const results = []
 
@@ -150,7 +155,7 @@ describe('Concurrency Integration Tests', () => {
         const userIndex = (hour - 9) % 3
 
         try {
-          const booking = await prisma.$transaction(async (tx) => {
+          const booking = await prisma.$transaction(async tx => {
             const booking = await tx.booking.create({
               data: {
                 roomId: room.id,
@@ -183,14 +188,14 @@ describe('Concurrency Integration Tests', () => {
     })
   })
 
-  describe('Concurrent Cancellations', () => {
-    it('should handle concurrent cancellation attempts gracefully', async () => {
+  describe("Concurrent Cancellations", () => {
+    it("should handle concurrent cancellation attempts gracefully", async () => {
       // Create a booking
       const tomorrow = addDays(new Date(), 1)
       const startUtc = fromZonedTime(setMinutes(setHours(tomorrow, 10), 0), site.timezone)
       const endUtc = fromZonedTime(setMinutes(setHours(tomorrow, 11), 0), site.timezone)
 
-      const booking = await prisma.$transaction(async (tx) => {
+      const booking = await prisma.$transaction(async tx => {
         const booking = await tx.booking.create({
           data: {
             roomId: room.id,
@@ -216,34 +221,36 @@ describe('Concurrency Integration Tests', () => {
 
       // Multiple users try to cancel simultaneously
       const cancellationPromises = [users[0], users[3]].map(user =>
-        prisma.$transaction(async (tx) => {
-          // Check if already cancelled
-          const currentBooking = await tx.booking.findUnique({
-            where: { id: booking.id },
+        prisma
+          .$transaction(async tx => {
+            // Check if already cancelled
+            const currentBooking = await tx.booking.findUnique({
+              where: { id: booking.id },
+            })
+
+            if (currentBooking?.canceledAt) {
+              return { success: false, reason: "Already cancelled" }
+            }
+
+            // Cancel booking
+            const cancelled = await tx.booking.update({
+              where: { id: booking.id },
+              data: { canceledAt: new Date() },
+            })
+
+            // Delete future slots
+            await tx.bookingSlot.deleteMany({
+              where: {
+                bookingId: booking.id,
+                slotStartUtc: { gte: new Date() },
+              },
+            })
+
+            return { success: true, cancelled }
           })
-
-          if (currentBooking?.canceledAt) {
-            return { success: false, reason: 'Already cancelled' }
-          }
-
-          // Cancel booking
-          const cancelled = await tx.booking.update({
-            where: { id: booking.id },
-            data: { canceledAt: new Date() },
+          .catch(error => {
+            return { success: false, error: (error as Error).message }
           })
-
-          // Delete future slots
-          await tx.bookingSlot.deleteMany({
-            where: {
-              bookingId: booking.id,
-              slotStartUtc: { gte: new Date() },
-            },
-          })
-
-          return { success: true, cancelled }
-        }).catch(error => {
-          return { success: false, error: (error as Error).message }
-        })
       )
 
       const results = await Promise.all(cancellationPromises)
@@ -261,8 +268,8 @@ describe('Concurrency Integration Tests', () => {
     })
   })
 
-  describe('Boundary Slot Conflicts', () => {
-    it('should handle adjacent bookings without conflicts', async () => {
+  describe("Boundary Slot Conflicts", () => {
+    it("should handle adjacent bookings without conflicts", async () => {
       const tomorrow = addDays(new Date(), 1)
 
       // Create adjacent bookings
@@ -272,7 +279,7 @@ describe('Concurrency Integration Tests', () => {
         const endUtc = fromZonedTime(setMinutes(setHours(tomorrow, hour + 1), 0), site.timezone)
 
         bookingPromises.push(
-          prisma.$transaction(async (tx) => {
+          prisma.$transaction(async tx => {
             const booking = await tx.booking.create({
               data: {
                 roomId: room.id,
@@ -308,7 +315,7 @@ describe('Concurrency Integration Tests', () => {
       // Verify no overlaps in database
       const allSlots = await prisma.bookingSlot.findMany({
         where: { roomId: room.id },
-        orderBy: { slotStartUtc: 'asc' },
+        orderBy: { slotStartUtc: "asc" },
       })
 
       // Check for duplicates
@@ -317,14 +324,14 @@ describe('Concurrency Integration Tests', () => {
       expect(slotTimes).toHaveLength(uniqueSlotTimes.length)
     })
 
-    it('should detect and prevent overlapping bookings', async () => {
+    it("should detect and prevent overlapping bookings", async () => {
       const tomorrow = addDays(new Date(), 1)
 
       // First booking: 10:00-11:30
       const booking1Start = fromZonedTime(setMinutes(setHours(tomorrow, 10), 0), site.timezone)
       const booking1End = fromZonedTime(setMinutes(setHours(tomorrow, 11), 30), site.timezone)
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         const booking = await tx.booking.create({
           data: {
             roomId: room.id,
@@ -352,7 +359,7 @@ describe('Concurrency Integration Tests', () => {
       const booking2Start = fromZonedTime(setMinutes(setHours(tomorrow, 11), 0), site.timezone)
       const booking2End = fromZonedTime(setMinutes(setHours(tomorrow, 12), 0), site.timezone)
 
-      const attemptOverlap = prisma.$transaction(async (tx) => {
+      const attemptOverlap = prisma.$transaction(async tx => {
         const booking = await tx.booking.create({
           data: {
             roomId: room.id,
@@ -378,14 +385,14 @@ describe('Concurrency Integration Tests', () => {
     })
   })
 
-  describe('Transaction Rollback', () => {
-    it('should rollback entire transaction on slot conflict', async () => {
+  describe("Transaction Rollback", () => {
+    it("should rollback entire transaction on slot conflict", async () => {
       const tomorrow = addDays(new Date(), 1)
       const startUtc = fromZonedTime(setMinutes(setHours(tomorrow, 15), 0), site.timezone)
       const endUtc = fromZonedTime(setMinutes(setHours(tomorrow, 16), 0), site.timezone)
 
       // Create first booking successfully
-      const firstBooking = await prisma.$transaction(async (tx) => {
+      const firstBooking = await prisma.$transaction(async tx => {
         const booking = await tx.booking.create({
           data: {
             roomId: room.id,
@@ -415,7 +422,7 @@ describe('Concurrency Integration Tests', () => {
       let bookingIdBeforeRollback: string | null = null
 
       try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async tx => {
           const booking = await tx.booking.create({
             data: {
               roomId: room.id,
@@ -467,8 +474,8 @@ describe('Concurrency Integration Tests', () => {
     })
   })
 
-  describe('High Concurrency Simulation', () => {
-    it('should handle 10 concurrent booking attempts for different slots', async () => {
+  describe("High Concurrency Simulation", () => {
+    it("should handle 10 concurrent booking attempts for different slots", async () => {
       const tomorrow = addDays(new Date(), 1)
       const bookingPromises = []
 
@@ -483,14 +490,14 @@ describe('Concurrency Integration Tests', () => {
           const user = await createTestUser({
             email: `user${i + 1}@test.com`,
             name: `User ${i + 1}`,
-            role: 'USER',
-            timezone: 'America/New_York',
+            role: "USER",
+            timezone: "America/New_York",
           })
           users.push(user)
         }
 
         bookingPromises.push(
-          prisma.$transaction(async (tx) => {
+          prisma.$transaction(async tx => {
             const booking = await tx.booking.create({
               data: {
                 roomId: room.id,
@@ -530,7 +537,7 @@ describe('Concurrency Integration Tests', () => {
 
       // Verify no duplicate slots
       const slots = await prisma.bookingSlot.groupBy({
-        by: ['slotStartUtc'],
+        by: ["slotStartUtc"],
         where: { roomId: room.id },
         _count: true,
       })
@@ -540,7 +547,7 @@ describe('Concurrency Integration Tests', () => {
       })
     })
 
-    it('should maintain data integrity under mixed operations', async () => {
+    it("should maintain data integrity under mixed operations", async () => {
       const tomorrow = addDays(new Date(), 1)
       const operations = []
 
@@ -549,7 +556,7 @@ describe('Concurrency Integration Tests', () => {
         const startUtc = fromZonedTime(setMinutes(setHours(tomorrow, hour), 0), site.timezone)
         const endUtc = fromZonedTime(setMinutes(setHours(tomorrow, hour), 30), site.timezone)
 
-        const booking = await prisma.$transaction(async (tx) => {
+        const booking = await prisma.$transaction(async tx => {
           const booking = await tx.booking.create({
             data: {
               roomId: room.id,
@@ -570,7 +577,7 @@ describe('Concurrency Integration Tests', () => {
           return booking
         })
 
-        operations.push({ type: 'create', booking })
+        operations.push({ type: "create", booking })
       }
 
       // Mix of operations: create, cancel, query
@@ -578,7 +585,7 @@ describe('Concurrency Integration Tests', () => {
 
       // New booking attempt
       mixedOps.push(
-        prisma.$transaction(async (tx) => {
+        prisma.$transaction(async tx => {
           const startUtc = fromZonedTime(setMinutes(setHours(tomorrow, 13), 0), site.timezone)
           const endUtc = fromZonedTime(setMinutes(setHours(tomorrow, 14), 0), site.timezone)
 
@@ -602,38 +609,42 @@ describe('Concurrency Integration Tests', () => {
             ],
           })
 
-          return { type: 'create', success: true }
+          return { type: "create", success: true }
         })
       )
 
       // Cancellation
       mixedOps.push(
-        prisma.booking.update({
-          where: { id: operations[0].booking.id },
-          data: { canceledAt: new Date() },
-        }).then(() => ({ type: 'cancel', success: true }))
+        prisma.booking
+          .update({
+            where: { id: operations[0].booking.id },
+            data: { canceledAt: new Date() },
+          })
+          .then(() => ({ type: "cancel", success: true }))
       )
 
       // Query availability
       mixedOps.push(
-        prisma.bookingSlot.findMany({
-          where: {
-            roomId: room.id,
-            slotStartUtc: {
-              gte: fromZonedTime(setMinutes(setHours(tomorrow, 8), 0), site.timezone),
-              lte: fromZonedTime(setMinutes(setHours(tomorrow, 18), 0), site.timezone),
+        prisma.bookingSlot
+          .findMany({
+            where: {
+              roomId: room.id,
+              slotStartUtc: {
+                gte: fromZonedTime(setMinutes(setHours(tomorrow, 8), 0), site.timezone),
+                lte: fromZonedTime(setMinutes(setHours(tomorrow, 18), 0), site.timezone),
+              },
             },
-          },
-        }).then(slots => ({ type: 'query', count: slots.length }))
+          })
+          .then(slots => ({ type: "query", count: slots.length }))
       )
 
       const results = await Promise.all(mixedOps)
 
       // Verify all operations completed
       expect(results).toHaveLength(3)
-      expect(results[0]).toHaveProperty('success', true)
-      expect(results[1]).toHaveProperty('success', true)
-      expect(results[2]).toHaveProperty('count')
+      expect(results[0]).toHaveProperty("success", true)
+      expect(results[1]).toHaveProperty("success", true)
+      expect(results[2]).toHaveProperty("count")
 
       // Verify final state
       const finalBookings = await prisma.booking.findMany({

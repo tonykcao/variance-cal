@@ -2,14 +2,14 @@
  * Data access layer for sites
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from "@/lib/db"
 
 export interface Site {
-  id: string;
-  name: string;
-  timezone: string;
-  createdAt: Date;
-  updatedAt: Date;
+  id: string
+  name: string
+  timezone: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 /**
@@ -18,11 +18,11 @@ export interface Site {
 export async function getSites(): Promise<Site[]> {
   const sites = await prisma.site.findMany({
     orderBy: {
-      name: 'asc',
+      name: "asc",
     },
-  });
+  })
 
-  return sites;
+  return sites
 }
 
 /**
@@ -32,9 +32,9 @@ export async function getSites(): Promise<Site[]> {
 export async function getSiteById(siteId: string): Promise<Site | null> {
   const site = await prisma.site.findUnique({
     where: { id: siteId },
-  });
+  })
 
-  return site;
+  return site
 }
 
 /**
@@ -47,29 +47,26 @@ export async function getSitesByIds(siteIds: string[]): Promise<Site[]> {
       id: { in: siteIds },
     },
     orderBy: {
-      name: 'asc',
+      name: "asc",
     },
-  });
+  })
 
-  return sites;
+  return sites
 }
 
 /**
  * Create a new site
  * @param data - Site data
  */
-export async function createSite(data: {
-  name: string;
-  timezone: string;
-}): Promise<Site> {
+export async function createSite(data: { name: string; timezone: string }): Promise<Site> {
   const site = await prisma.site.create({
     data: {
       name: data.name,
       timezone: data.timezone,
     },
-  });
+  })
 
-  return site;
+  return site
 }
 
 /**
@@ -80,8 +77,8 @@ export async function createSite(data: {
 export async function updateSite(
   siteId: string,
   data: {
-    name?: string;
-    timezone?: string;
+    name?: string
+    timezone?: string
   }
 ): Promise<Site | null> {
   try {
@@ -91,10 +88,10 @@ export async function updateSite(
         ...(data.name && { name: data.name }),
         ...(data.timezone && { timezone: data.timezone }),
       },
-    });
+    })
 
-    return site;
+    return site
   } catch (error) {
-    return null;
+    return null
   }
 }

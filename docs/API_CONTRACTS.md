@@ -7,6 +7,7 @@ NookBook is a coworking space booking system (similar to Airbnb, but for booking
 ### UI Design Theme
 
 The system features a **minimalist, greyscale design** with the following characteristics:
+
 - **Color Scheme**: Pure greyscale palette (no colors except for critical states)
 - **Typography**: JetBrains Mono as primary font with monospace aesthetics
 - **Layout**: Clean, minimal with generous whitespace and vertical sidebar
@@ -31,6 +32,7 @@ The system features a **minimalist, greyscale design** with the following charac
 ## Authentication
 
 All API endpoints require authentication via one of:
+
 - `x-user-id` header (development mode)
 - `mock-user-id` cookie (browser sessions)
 - Session cookie with user information
@@ -38,6 +40,7 @@ All API endpoints require authentication via one of:
 ### Important: After Re-seeding Database
 
 When you re-seed the database, user IDs change. To update hardcoded IDs:
+
 ```bash
 npm run db:seed          # Re-seed database
 npm run db:update-ids    # Update hardcoded IDs in codebase
@@ -61,14 +64,14 @@ Retrieves room availability for specified dates and filters.
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| sites | string | No | Comma-separated site IDs | `site1,site2` |
-| capacityMin | integer | No | Minimum room capacity | `4` |
-| from | string | No | Start date (YYYY-MM-DD). Defaults to today | `2025-09-24` |
-| to | string | No | End date (YYYY-MM-DD). Defaults to `from` value | `2025-09-26` |
-| windowStart | string | No | Time window start (HH:mm) in room's timezone | `10:00` |
-| windowEnd | string | No | Time window end (HH:mm) in room's timezone | `14:00` |
+| Parameter   | Type    | Required | Description                                     | Example       |
+| ----------- | ------- | -------- | ----------------------------------------------- | ------------- |
+| sites       | string  | No       | Comma-separated site IDs                        | `site1,site2` |
+| capacityMin | integer | No       | Minimum room capacity                           | `4`           |
+| from        | string  | No       | Start date (YYYY-MM-DD). Defaults to today      | `2025-09-24`  |
+| to          | string  | No       | End date (YYYY-MM-DD). Defaults to `from` value | `2025-09-26`  |
+| windowStart | string  | No       | Time window start (HH:mm) in room's timezone    | `10:00`       |
+| windowEnd   | string  | No       | Time window end (HH:mm) in room's timezone      | `14:00`       |
 
 #### Response
 
@@ -143,9 +146,9 @@ Retrieves bookings for the current user.
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description | Example |
-|-----------|------|----------|-------------|---------|
-| scope | string | No | Filter by booking status: `upcoming`, `past`, `all` | `upcoming` |
+| Parameter | Type   | Required | Description                                         | Example    |
+| --------- | ------ | -------- | --------------------------------------------------- | ---------- |
+| scope     | string | No       | Filter by booking status: `upcoming`, `past`, `all` | `upcoming` |
 
 #### Response
 
@@ -212,16 +215,18 @@ Creates a new booking.
   "roomId": "room-456",
   "startLocal": "2025-09-24T10:00",
   "endLocal": "2025-09-24T11:30",
-  "attendees": ["user-456", "user-789"]
+  "attendees": ["bob@example.com", "charlie@example.com"],
+  "notes": "Sprint planning meeting"
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| roomId | string | Yes | Room ID to book |
-| startLocal | string | Yes | Start time in room's local timezone (YYYY-MM-DDTHH:mm) |
-| endLocal | string | Yes | End time in room's local timezone (YYYY-MM-DDTHH:mm) |
-| attendees | string[] | No | Array of user IDs (max 3) |
+| Field      | Type     | Required | Description                                                      |
+| ---------- | -------- | -------- | ---------------------------------------------------------------- |
+| roomId     | string   | Yes      | Room ID to book                                                 |
+| startLocal | string   | Yes      | Start time in room's local timezone (YYYY-MM-DDTHH:mm), must be on :00 or :30 |
+| endLocal   | string   | Yes      | End time in room's local timezone (YYYY-MM-DDTHH:mm), must be on :00 or :30   |
+| attendees  | string[] | No       | Array of email addresses (max 3), users created automatically   |
+| notes      | string   | No       | Optional booking notes (max 1000 chars)                         |
 
 #### Response
 
@@ -266,10 +271,23 @@ Creates a new booking.
 
 **Error (400 Bad Request):**
 
+Examples of validation errors:
+
 ```json
 {
-  "error": "Invalid booking times",
-  "details": "Booking must be on 30-minute boundaries"
+  "error": "Start time must be aligned to 30-minute boundaries (:00 or :30)"
+}
+```
+
+```json
+{
+  "error": "Booking duration cannot exceed 8 hours"
+}
+```
+
+```json
+{
+  "error": "Booking is outside of room opening hours"
 }
 ```
 
@@ -281,9 +299,9 @@ Cancels a booking.
 
 **Path Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | Booking ID to cancel |
+| Parameter | Type   | Required | Description          |
+| --------- | ------ | -------- | -------------------- |
+| id        | string | Yes      | Booking ID to cancel |
 
 #### Response
 
@@ -517,11 +535,11 @@ Retrieves global activity log (Admin only).
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| entityType | string | No | Filter by entity type: `booking`, `room`, `site` |
-| entityId | string | No | Filter by specific entity ID |
-| limit | integer | No | Number of records to return (default: 50) |
+| Parameter  | Type    | Required | Description                                      |
+| ---------- | ------- | -------- | ------------------------------------------------ |
+| entityType | string  | No       | Filter by entity type: `booking`, `room`, `site` |
+| entityId   | string  | No       | Filter by specific entity ID                     |
+| limit      | integer | No       | Number of records to return (default: 50)        |
 
 #### Response
 
@@ -551,20 +569,21 @@ Retrieves global activity log (Admin only).
 
 ## Error Codes
 
-| Code | Description | Common Causes |
-|------|-------------|---------------|
-| 400 | Bad Request | Invalid input parameters, malformed dates |
-| 401 | Unauthorized | Missing or invalid authentication |
-| 403 | Forbidden | Insufficient permissions for operation |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Booking slot already taken |
-| 500 | Internal Server Error | Database or server error |
+| Code | Description           | Common Causes                             |
+| ---- | --------------------- | ----------------------------------------- |
+| 400  | Bad Request           | Invalid input parameters, malformed dates |
+| 401  | Unauthorized          | Missing or invalid authentication         |
+| 403  | Forbidden             | Insufficient permissions for operation    |
+| 404  | Not Found             | Resource doesn't exist                    |
+| 409  | Conflict              | Booking slot already taken                |
+| 500  | Internal Server Error | Database or server error                  |
 
 ---
 
 ## Rate Limiting
 
 Currently no rate limiting is implemented in development. Production deployment should consider:
+
 - 100 requests per minute for availability queries
 - 20 booking creations per hour per user
 - 50 cancellations per hour per user
@@ -574,6 +593,7 @@ Currently no rate limiting is implemented in development. Production deployment 
 ## Edge Cases and Validation
 
 ### Time Boundaries
+
 - All bookings must align to 30-minute boundaries
 - Bookings cannot be in the past
 - Bookings must be within room operating hours (typically 8:00-20:00)
@@ -583,19 +603,23 @@ Currently no rate limiting is implemented in development. Production deployment 
 - Multi-day bookings: NOT SUPPORTED - each day requires a separate booking
 
 ### Capacity Constraints
+
 - Attendee limit: 3 additional users (4 total including owner)
 - Room capacity is enforced (total attendees <= room capacity)
 
 ### Timezone Handling
+
 - All times stored in UTC
 - Input times interpreted in room's timezone
 - Output includes both UTC and local timezone information
 
 ### Concurrent Operations
+
 - Database unique constraint on (roomId, slotStartUtc) prevents double-booking
 - Optimistic locking not currently implemented (future enhancement)
 
 ### Cancellation Rules
+
 - Users can only cancel their own bookings
 - Admins can cancel any booking
 - Partial cancellation: if booking is in progress, only future slots are freed
@@ -606,6 +630,7 @@ Currently no rate limiting is implemented in development. Production deployment 
 ## Webhooks (Future)
 
 Planned webhook events:
+
 - `booking.created`
 - `booking.canceled`
 - `room.updated`
@@ -616,5 +641,6 @@ Planned webhook events:
 ## API Versioning
 
 Currently unversioned. Future versions will use:
+
 - URL versioning: `/api/v2/...`
 - Header versioning: `X-API-Version: 2`

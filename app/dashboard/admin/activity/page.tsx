@@ -11,11 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Activity,
   CalendarIcon,
@@ -142,43 +138,74 @@ export default function AdminActivityPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-lg border border p-4">
+      <div className="bg-card rounded-lg border p-4">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-foreground">Filters:</span>
           </div>
 
-          <Select value={filters.entityType || "all"} onValueChange={(value) => handleFilterChange("entityType", value === "all" ? "" : value)}>
+          <Select
+            value={filters.entityType || "all"}
+            onValueChange={value => handleFilterChange("entityType", value === "all" ? "" : value)}
+          >
             <SelectTrigger className="w-40 bg-secondary border-input text-foreground">
               <SelectValue placeholder="Entity Type" />
             </SelectTrigger>
             <SelectContent className="bg-secondary border-input">
-              <SelectItem value="all" className="text-foreground">All Types</SelectItem>
-              <SelectItem value="booking" className="text-foreground">Bookings</SelectItem>
-              <SelectItem value="room" className="text-foreground">Rooms</SelectItem>
-              <SelectItem value="site" className="text-foreground">Sites</SelectItem>
+              <SelectItem value="all" className="text-foreground">
+                All Types
+              </SelectItem>
+              <SelectItem value="booking" className="text-foreground">
+                Bookings
+              </SelectItem>
+              <SelectItem value="room" className="text-foreground">
+                Rooms
+              </SelectItem>
+              <SelectItem value="site" className="text-foreground">
+                Sites
+              </SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={filters.action || "all"} onValueChange={(value) => handleFilterChange("action", value === "all" ? "" : value)}>
+          <Select
+            value={filters.action || "all"}
+            onValueChange={value => handleFilterChange("action", value === "all" ? "" : value)}
+          >
             <SelectTrigger className="w-40 bg-secondary border-input text-foreground">
               <SelectValue placeholder="Action" />
             </SelectTrigger>
             <SelectContent className="bg-secondary border-input">
-              <SelectItem value="all" className="text-foreground">All Actions</SelectItem>
-              <SelectItem value="BOOKING_CREATED" className="text-foreground">Created</SelectItem>
-              <SelectItem value="BOOKING_CANCELED" className="text-foreground">Canceled</SelectItem>
-              <SelectItem value="ROOM_CREATED" className="text-foreground">Room Created</SelectItem>
-              <SelectItem value="ROOM_UPDATED" className="text-foreground">Room Updated</SelectItem>
-              <SelectItem value="SITE_CREATED" className="text-foreground">Site Created</SelectItem>
-              <SelectItem value="SITE_UPDATED" className="text-foreground">Site Updated</SelectItem>
+              <SelectItem value="all" className="text-foreground">
+                All Actions
+              </SelectItem>
+              <SelectItem value="BOOKING_CREATED" className="text-foreground">
+                Created
+              </SelectItem>
+              <SelectItem value="BOOKING_CANCELED" className="text-foreground">
+                Canceled
+              </SelectItem>
+              <SelectItem value="ROOM_CREATED" className="text-foreground">
+                Room Created
+              </SelectItem>
+              <SelectItem value="ROOM_UPDATED" className="text-foreground">
+                Room Updated
+              </SelectItem>
+              <SelectItem value="SITE_CREATED" className="text-foreground">
+                Site Created
+              </SelectItem>
+              <SelectItem value="SITE_UPDATED" className="text-foreground">
+                Site Updated
+              </SelectItem>
             </SelectContent>
           </Select>
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="bg-secondary border-input text-foreground hover:bg-accent">
+              <Button
+                variant="outline"
+                className="bg-secondary border-input text-foreground hover:bg-accent"
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {filters.date ? format(filters.date, "MMM d, yyyy") : "Date"}
               </Button>
@@ -187,19 +214,26 @@ export default function AdminActivityPage() {
               <Calendar
                 mode="single"
                 selected={filters.date || undefined}
-                onSelect={(date) => setFilters(prev => ({ ...prev, date: date || null }))}
+                onSelect={date => setFilters(prev => ({ ...prev, date: date || null }))}
                 className="bg-secondary text-foreground"
               />
             </PopoverContent>
           </Popover>
 
-          <Button onClick={fetchActivities} className="bg-secondary hover:bg-accent border border-input text-foreground">
+          <Button
+            onClick={fetchActivities}
+            className="bg-secondary hover:bg-accent border border-input text-foreground"
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Apply
           </Button>
 
           {(filters.entityType || filters.action || filters.date) && (
-            <Button variant="outline" onClick={clearFilters} className="border-input text-muted-foreground hover:bg-secondary">
+            <Button
+              variant="outline"
+              onClick={clearFilters}
+              className="border-input text-muted-foreground hover:bg-secondary"
+            >
               Clear Filters
             </Button>
           )}
@@ -207,7 +241,10 @@ export default function AdminActivityPage() {
       </div>
 
       {/* Activity Feed */}
-      <div className="bg-card rounded-lg border border">
+      <div
+        className="bg-card rounded-lg
+      "
+      >
         {loading ? (
           <div className="p-16 text-center">
             <RefreshCw className="h-8 w-8 text-muted-foreground mx-auto mb-4 animate-spin" />
@@ -221,7 +258,7 @@ export default function AdminActivityPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-800">
-            {activities.map((activity) => {
+            {activities.map(activity => {
               const Icon = getActionIcon(activity.action)
               return (
                 <div key={activity.id} className="p-4 hover:bg-secondary/50">
@@ -234,7 +271,9 @@ export default function AdminActivityPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <Badge className={`${ACTION_COLORS[activity.action] || "bg-secondary text-foreground"} text-xs`}>
+                        <Badge
+                          className={`${ACTION_COLORS[activity.action] || "bg-secondary text-foreground"} text-xs`}
+                        >
                           {activity.action.replace("_", " ")}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
@@ -245,10 +284,10 @@ export default function AdminActivityPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <User className="h-3 w-3 text-muted-foreground" />
                         <span className="text-sm text-foreground font-medium">
-                          {activity.actor?.name || 'Unknown'}
+                          {activity.actor?.name || "Unknown"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          ({activity.actor?.email || 'N/A'})
+                          ({activity.actor?.email || "N/A"})
                         </span>
                       </div>
 
@@ -263,7 +302,9 @@ export default function AdminActivityPage() {
                             {Object.entries(activity.metadata).map(([key, value]) => (
                               <div key={key}>
                                 <span className="text-muted-foreground">{key}:</span>{" "}
-                                <span>{typeof value === "string" ? value : JSON.stringify(value)}</span>
+                                <span>
+                                  {typeof value === "string" ? value : JSON.stringify(value)}
+                                </span>
                               </div>
                             ))}
                           </div>

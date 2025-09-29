@@ -62,24 +62,27 @@ export function useBookings(scope: "upcoming" | "past"): UseBookingsReturn {
     }
   }, [scope])
 
-  const cancelBooking = useCallback(async (bookingId: string) => {
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: "DELETE",
-      })
+  const cancelBooking = useCallback(
+    async (bookingId: string) => {
+      try {
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          method: "DELETE",
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to cancel booking")
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || "Failed to cancel booking")
+        }
+
+        // Refetch bookings after successful cancellation
+        await fetchBookings()
+      } catch (err) {
+        console.error("Error canceling booking:", err)
+        throw err
       }
-
-      // Refetch bookings after successful cancellation
-      await fetchBookings()
-    } catch (err) {
-      console.error("Error canceling booking:", err)
-      throw err
-    }
-  }, [fetchBookings])
+    },
+    [fetchBookings]
+  )
 
   useEffect(() => {
     fetchBookings()

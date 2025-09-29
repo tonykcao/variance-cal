@@ -63,7 +63,7 @@ export function BookingsList({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <div key={i} className="rounded-lg border bg-card p-6">
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -120,7 +120,7 @@ export function BookingsList({
 
   return (
     <div className="space-y-4">
-      {sortedBookings.map((booking) => (
+      {sortedBookings.map(booking => (
         <BookingCard
           key={booking.id}
           booking={booking}

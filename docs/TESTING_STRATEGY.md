@@ -61,12 +61,12 @@ test/
 // vitest.config.ts
 export default defineConfig({
   test: {
-    environment: 'happy-dom',
+    environment: "happy-dom",
     globals: true,
-    setupFiles: ['./test/setup.ts'],
+    setupFiles: ["./test/setup.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
     },
   },
 })
@@ -81,18 +81,20 @@ export default defineConfig({
 **Location**: `test/unit/`
 
 **Examples**:
+
 - Time utilities (snapTo30, timezone conversions)
 - Opening hours validation
 - Slot enumeration logic
 - Permission checks
 
 **Best Practices**:
+
 ```typescript
-describe('snapTo30', () => {
-  it('should snap to 30-minute boundaries with floor', () => {
-    const input = new Date('2025-09-24T10:15:00Z')
-    const expected = new Date('2025-09-24T10:00:00Z')
-    expect(snapTo30(input, 'floor')).toEqual(expected)
+describe("snapTo30", () => {
+  it("should snap to 30-minute boundaries with floor", () => {
+    const input = new Date("2025-09-24T10:15:00Z")
+    const expected = new Date("2025-09-24T10:00:00Z")
+    expect(snapTo30(input, "floor")).toEqual(expected)
   })
 })
 ```
@@ -104,16 +106,18 @@ describe('snapTo30', () => {
 **Location**: `test/integration/`
 
 **Examples**:
+
 - Database transactions
 - API route handlers
 - Booking creation flow
 - Availability calculation
 
 **Database Strategy**:
+
 ```typescript
 beforeEach(async () => {
   await resetTestDatabase()
-  await seedTestData('minimal')
+  await seedTestData("minimal")
 })
 
 afterEach(async () => {
@@ -128,6 +132,7 @@ afterEach(async () => {
 **Location**: Alongside components or in `test/components/`
 
 **Examples**:
+
 ```typescript
 import { render, screen } from '@testing-library/react'
 import { RoomCard } from '@/components/RoomCard'
@@ -146,6 +151,7 @@ test('displays room information', () => {
 **Location**: `test/e2e/`
 
 **Examples**:
+
 - Complete booking journey
 - Admin site management
 - Multi-user concurrent bookings
@@ -155,15 +161,17 @@ test('displays room information', () => {
 **Purpose**: Ensure system handles concurrent operations correctly
 
 **Critical for**:
+
 - Double-booking prevention
 - Slot locking mechanism
 - Transaction isolation
 
 **Example**:
+
 ```typescript
-test('prevents double-booking under concurrency', async () => {
+test("prevents double-booking under concurrency", async () => {
   const room = await createTestRoom()
-  const slot = '2025-09-24T10:00:00Z'
+  const slot = "2025-09-24T10:00:00Z"
 
   // Attempt parallel bookings
   const results = await Promise.allSettled([
@@ -173,7 +181,7 @@ test('prevents double-booking under concurrency', async () => {
   ])
 
   // Only one should succeed
-  const successes = results.filter(r => r.status === 'fulfilled')
+  const successes = results.filter(r => r.status === "fulfilled")
   expect(successes).toHaveLength(1)
 })
 ```
@@ -207,6 +215,7 @@ npm test -- --grep "timezone"
 For integration tests requiring a database:
 
 1. **Option 1**: Use test database
+
    ```bash
    TEST_DATABASE_URL=mysql://root:password@localhost:3307/nookbook_test
    ```
@@ -214,7 +223,7 @@ For integration tests requiring a database:
 2. **Option 2**: Use in-memory database
    ```typescript
    // For unit tests that need Prisma
-   import { mockDeep } from 'vitest-mock-deep'
+   import { mockDeep } from "vitest-mock-deep"
    const prismaMock = mockDeep<PrismaClient>()
    ```
 
@@ -223,9 +232,9 @@ For integration tests requiring a database:
 ### Test Structure Template
 
 ```typescript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
 
-describe('Feature Name', () => {
+describe("Feature Name", () => {
   // Setup
   beforeEach(async () => {
     // Test preparation
@@ -235,8 +244,8 @@ describe('Feature Name', () => {
     // Cleanup
   })
 
-  describe('Specific Function', () => {
-    it('should handle normal case', () => {
+  describe("Specific Function", () => {
+    it("should handle normal case", () => {
       // Arrange
       const input = createTestData()
 
@@ -247,11 +256,11 @@ describe('Feature Name', () => {
       expect(result).toMatchExpectedOutput()
     })
 
-    it('should handle edge case', () => {
+    it("should handle edge case", () => {
       // Test edge cases
     })
 
-    it('should handle error case', () => {
+    it("should handle error case", () => {
       // Test error handling
     })
   })
@@ -263,16 +272,16 @@ describe('Feature Name', () => {
 Use factories for consistent test data:
 
 ```typescript
-import { createMockUser, createMockRoom } from '@/test/helpers/factories'
+import { createMockUser, createMockRoom } from "@/test/helpers/factories"
 
 const testUser = createMockUser({
-  role: 'ADMIN',
-  timezone: 'America/New_York'
+  role: "ADMIN",
+  timezone: "America/New_York",
 })
 
 const testRoom = createMockRoom(siteId, {
   capacity: 10,
-  name: 'Large Conference Room'
+  name: "Large Conference Room",
 })
 ```
 
@@ -280,13 +289,13 @@ const testRoom = createMockRoom(siteId, {
 
 ```typescript
 // Mock external dependencies
-vi.mock('@/lib/email', () => ({
-  sendEmail: vi.fn()
+vi.mock("@/lib/email", () => ({
+  sendEmail: vi.fn(),
 }))
 
 // Mock date/time for consistent tests
 vi.useFakeTimers()
-vi.setSystemTime(new Date('2025-09-24T12:00:00Z'))
+vi.setSystemTime(new Date("2025-09-24T12:00:00Z"))
 ```
 
 ## Test Coverage Goals
@@ -399,7 +408,7 @@ npm test -- --reporter=verbose --logHeapUsage
 ### Load Testing Bookings
 
 ```typescript
-test('handles 100 concurrent booking attempts', async () => {
+test("handles 100 concurrent booking attempts", async () => {
   const room = await createTestRoom()
   const users = await createTestUsers(100)
 
@@ -410,7 +419,7 @@ test('handles 100 concurrent booking attempts', async () => {
       createBooking({
         roomId: room.id,
         userId: user.id,
-        startTime: randomSlot()
+        startTime: randomSlot(),
       })
     )
   )
@@ -418,7 +427,7 @@ test('handles 100 concurrent booking attempts', async () => {
   const duration = performance.now() - startTime
 
   expect(duration).toBeLessThan(5000) // Should complete within 5s
-  expect(results.filter(r => r.status === 'fulfilled')).toHaveLength.greaterThan(0)
+  expect(results.filter(r => r.status === "fulfilled")).toHaveLength.greaterThan(0)
 })
 ```
 
@@ -447,7 +456,7 @@ test('handles 100 concurrent booking attempts', async () => {
 ### Testing Async Operations
 
 ```typescript
-it('should handle async operations', async () => {
+it("should handle async operations", async () => {
   const result = await asyncFunction()
   expect(result).toBeDefined()
 })
@@ -456,19 +465,19 @@ it('should handle async operations', async () => {
 ### Testing Errors
 
 ```typescript
-it('should throw on invalid input', () => {
-  expect(() => functionThatThrows()).toThrow('Expected error message')
+it("should throw on invalid input", () => {
+  expect(() => functionThatThrows()).toThrow("Expected error message")
 })
 ```
 
 ### Testing Database Operations
 
 ```typescript
-it('should create booking in database', async () => {
+it("should create booking in database", async () => {
   const booking = await createBooking(testData)
 
   const saved = await prisma.booking.findUnique({
-    where: { id: booking.id }
+    where: { id: booking.id },
   })
 
   expect(saved).toBeDefined()

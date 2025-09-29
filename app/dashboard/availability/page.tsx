@@ -7,6 +7,7 @@ import { RoomAvailabilityGrid } from "@/components/availability/room-availabilit
 import { CreateBookingModal } from "@/components/availability/create-booking-modal"
 import { format, parseISO } from "date-fns"
 import { formatInTimeZone } from "date-fns-tz"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 // Transform API response to UI format
 function transformAvailabilityData(apiData: any, targetDate: Date) {
@@ -31,13 +32,13 @@ function transformAvailabilityData(apiData: any, targetDate: Date) {
       slots: slots.map((slot: any) => {
         // Convert UTC time to room's local time for display
         const startUtc = new Date(slot.startUtc)
-        const localTime = formatInTimeZone(startUtc, room.timezone, 'HH:mm')
+        const localTime = formatInTimeZone(startUtc, room.timezone, "HH:mm")
 
         return {
           time: localTime,
           available: slot.available,
-          isClosed: slot.reason === 'outside-hours',
-          isPast: slot.reason === 'past',
+          isClosed: slot.reason === "outside-hours",
+          isPast: slot.reason === "past",
           isOwnBooking: slot.isOwnBooking,
           isAttending: slot.isAttending,
         }
@@ -48,10 +49,11 @@ function transformAvailabilityData(apiData: any, targetDate: Date) {
 
 export default function AvailabilityPage() {
   const searchParams = useSearchParams()
+  const { currentUser, loading: userLoading } = useCurrentUser()
 
   // Parse initial values from URL params
-  const initialDate = searchParams.get('date') ? parseISO(searchParams.get('date')!) : undefined
-  const initialSite = searchParams.get('site') || undefined
+  const initialDate = searchParams.get("date") ? parseISO(searchParams.get("date")!) : undefined
+  const initialSite = searchParams.get("site") || undefined
 
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -70,8 +72,11 @@ export default function AvailabilityPage() {
     endTime: "",
   })
 
-  // Load initial data on mount
+  // Load initial data on mount after user is loaded
   useEffect(() => {
+    // Wait for user to be loaded before fetching data
+    if (userLoading) return
+
     // Wait for sites to load first, then search with all site IDs
     const loadInitialData = async () => {
       try {
@@ -81,7 +86,7 @@ export default function AvailabilityPage() {
           const allSiteIds = data.sites.map((site: any) => site.id)
           // Use next Monday to ensure we have available future slots
           const nextMonday = new Date()
-          nextMonday.setDate(nextMonday.getDate() + (1 + 7 - nextMonday.getDay()) % 7)
+          nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7))
           const initialFilters: SearchFilters = {
             sites: allSiteIds,
             capacityMin: 1,
@@ -94,10 +99,10 @@ export default function AvailabilityPage() {
       }
     }
     loadInitialData()
-  }, [])
+  }, [userLoading])
 
   const handleSearch = async (filters: SearchFilters) => {
-    console.log("Searching with filters:", filters)
+    // Search initiated with filters
     setIsSearching(true)
     setCurrentFilters(filters)
 
@@ -142,18 +147,18 @@ export default function AvailabilityPage() {
   }
 
   const handleSlotSelect = (room: any, startTime: string, endTime: string) => {
-    console.log("Selected slot:", { room, startTime, endTime })
+    // Slot selected for booking
     setBookingModal({
       open: true,
       room,
-      date: new Date(),
+      date: currentFilters?.date || new Date(),
       startTime,
       endTime,
     })
   }
 
   const handleBookingConfirm = async (attendeeIds: string[]) => {
-    console.log("Creating booking with attendees:", attendeeIds)
+    // Creating booking with attendees
 
     if (!bookingModal.room || !currentFilters) {
       console.error("Missing booking details")
@@ -182,7 +187,7 @@ export default function AvailabilityPage() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log("Booking created successfully:", data)
+        // Booking created successfully
         setBookingModal({ ...bookingModal, open: false })
         // Refresh availability data
         if (currentFilters) {
@@ -196,6 +201,18 @@ export default function AvailabilityPage() {
       console.error("Error creating booking:", error)
       alert("Failed to create booking. Please try again.")
     }
+  }
+
+  // Show loading state while user is being loaded
+  if (userLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading user data...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -216,7 +233,9 @@ export default function AvailabilityPage() {
             <div className="border-b pb-6">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">Available Rooms</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                {currentFilters?.date ? format(currentFilters.date, "EEEE, MMMM d, yyyy") : "Select filters to search"}
+                {currentFilters?.date
+                  ? format(currentFilters.date, "EEEE, MMMM d, yyyy")
+                  : "Select filters to search"}
               </p>
             </div>
 
@@ -226,20 +245,26 @@ export default function AvailabilityPage() {
                 <div className="rounded-lg border bg-card p-16 text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                    <p className="text-sm text-muted-foreground">Searching for available rooms...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Searching for available rooms...
+                    </p>
                   </div>
                 </div>
               ) : searchResults.length === 0 && currentFilters ? (
                 <div className="rounded-lg border bg-card p-16 text-center">
-                  <div className="text-amber-500 mb-2">⚠</div>
-                  <p className="text-sm text-muted-foreground">No rooms found matching your criteria</p>
-                  <p className="text-xs text-muted-foreground/80 mt-2">Try adjusting your filters</p>
+                  <div className="text-amber-500 mb-2 text-lg font-semibold">WARNING</div>
+                  <p className="text-sm text-muted-foreground">
+                    No rooms found matching your criteria
+                  </p>
+                  <p className="text-xs text-muted-foreground/80 mt-2">
+                    Try adjusting your filters
+                  </p>
                 </div>
               ) : (
                 <RoomAvailabilityGrid
                   availability={searchResults}
                   date={currentFilters?.date || new Date()}
-                  userTimezone="America/Los_Angeles"
+                  userTimezone={currentUser?.timezone || "America/Los_Angeles"}
                   onSlotSelect={handleSlotSelect}
                 />
               )}
@@ -255,7 +280,7 @@ export default function AvailabilityPage() {
         date={bookingModal.date}
         startTime={bookingModal.startTime}
         endTime={bookingModal.endTime}
-        userTimezone="America/Los_Angeles"
+        userTimezone={currentUser?.timezone || "America/Los_Angeles"}
         onConfirm={handleBookingConfirm}
       />
     </div>

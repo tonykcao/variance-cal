@@ -1,12 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PrismaClient } from '@prisma/client'
-import { createTestUser, createTestSite, createTestRoom, createTestBooking, cleanDatabase } from '../fixtures'
-import { addDays, setHours, setMinutes } from 'date-fns'
-import { fromZonedTime } from 'date-fns-tz'
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import {
+  createTestUser,
+  createTestSite,
+  createTestRoom,
+  createTestBooking,
+  cleanDatabase,
+  getUniqueTestId,
+} from "../fixtures"
+import { addDays, setHours, setMinutes } from "date-fns"
+import { fromZonedTime } from "date-fns-tz"
+import { getTestPrismaClient } from "../helpers/db"
 
-const prisma = new PrismaClient()
+const prisma = getTestPrismaClient()
 
-describe('Admin Cancellation Permissions', () => {
+describe("Admin Cancellation Permissions", () => {
   let adminUser: any
   let regularUser1: any
   let regularUser2: any
@@ -16,47 +23,50 @@ describe('Admin Cancellation Permissions', () => {
   beforeEach(async () => {
     await cleanDatabase()
 
-    // Create test users
+    // Use unique IDs to avoid conflicts
+    const testId = getUniqueTestId()
+
+    // Create test users with unique emails
     adminUser = await createTestUser({
-      email: 'admin@test.com',
-      name: 'Admin User',
-      role: 'ADMIN',
-      timezone: 'America/New_York',
+      email: `admin_${testId}@test.com`,
+      name: `Admin User ${testId}`,
+      role: "ADMIN",
+      timezone: "America/New_York",
     })
 
     regularUser1 = await createTestUser({
-      email: 'user1@test.com',
-      name: 'Regular User 1',
-      role: 'USER',
-      timezone: 'America/New_York',
+      email: `user1_${testId}@test.com`,
+      name: `Regular User 1 ${testId}`,
+      role: "USER",
+      timezone: "America/New_York",
     })
 
     regularUser2 = await createTestUser({
-      email: 'user2@test.com',
-      name: 'Regular User 2',
-      role: 'USER',
-      timezone: 'America/Los_Angeles',
+      email: `user2_${testId}@test.com`,
+      name: `Regular User 2 ${testId}`,
+      role: "USER",
+      timezone: "America/Los_Angeles",
     })
 
-    // Create test site and room
+    // Create test site and room with unique names
     site = await createTestSite({
-      name: 'Test Site',
-      timezone: 'America/New_York',
+      name: `Test Site ${testId}`,
+      timezone: "America/New_York",
     })
 
     room = await createTestRoom({
       siteId: site.id,
-      name: 'Meeting Room A',
+      name: `Meeting Room A ${testId}`,
       capacity: 8,
     })
   })
 
   afterEach(async () => {
-    await prisma.$disconnect()
+    // Don't disconnect shared client
   })
 
-  describe('Admin Cancellation Rights', () => {
-    it('should allow admin to cancel any users booking', async () => {
+  describe("Admin Cancellation Rights", () => {
+    it("should allow admin to cancel any users booking", async () => {
       // Create booking owned by regular user
       const tomorrow = addDays(new Date(), 1)
       const startUtc = fromZonedTime(setMinutes(setHours(tomorrow, 10), 0), site.timezone)
@@ -74,7 +84,7 @@ describe('Admin Cancellation Permissions', () => {
         const user = await prisma.user.findUnique({ where: { id: userId } })
 
         if (!user) {
-          throw new Error('User not found')
+          throw new Error("User not found")
         }
 
         const booking = await prisma.booking.findUnique({
@@ -82,16 +92,16 @@ describe('Admin Cancellation Permissions', () => {
         })
 
         if (!booking) {
-          throw new Error('Booking not found')
+          throw new Error("Booking not found")
         }
 
         // Check permission: admin can cancel any, user can only cancel own
-        if (user.role !== 'ADMIN' && booking.ownerId !== userId) {
-          throw new Error('Unauthorized to cancel this booking')
+        if (user.role !== "ADMIN" && booking.ownerId !== userId) {
+          throw new Error("Unauthorized to cancel this booking")
         }
 
         // Perform cancellation
-        const canceledBooking = await prisma.$transaction(async (tx) => {
+        const canceledBooking = await prisma.$transaction(async tx => {
           // Mark booking as canceled
           const updated = await tx.booking.update({
             where: { id: bookingId },
@@ -110,8 +120,8 @@ describe('Admin Cancellation Permissions', () => {
           await tx.activityLog.create({
             data: {
               actorId: userId,
-              action: 'BOOKING_CANCELED',
-              entityType: 'booking',
+              action: "BOOKING_CANCELED",
+              entityType: "booking",
               entityId: bookingId,
               metadata: {
                 canceledBy: user.email,
@@ -134,17 +144,17 @@ describe('Admin Cancellation Permissions', () => {
       // Verify activity log
       const logs = await prisma.activityLog.findMany({
         where: {
-          action: 'BOOKING_CANCELED',
+          action: "BOOKING_CANCELED",
           entityId: booking.id,
         },
       })
 
       expect(logs).toHaveLength(1)
       expect(logs[0].actorId).toBe(adminUser.id)
-      expect((logs[0].metadata as any).canceledByRole).toBe('ADMIN')
+      expect((logs[0].metadata as any).canceledByRole).toBe("ADMIN")
     })
 
-    it('should prevent regular users from canceling others bookings', async () => {
+    it("should prevent regular users from canceling others bookings", async () => {
       // User 1 creates a booking
       const tomorrow = addDays(new Date(), 1)
       const booking = await createTestBooking({
@@ -160,18 +170,18 @@ describe('Admin Cancellation Permissions', () => {
         const bookingToCancel = await prisma.booking.findUnique({ where: { id: booking.id } })
 
         if (!user || !bookingToCancel) {
-          throw new Error('Data not found')
+          throw new Error("Data not found")
         }
 
         // Permission check
-        if (user.role !== 'ADMIN' && bookingToCancel.ownerId !== regularUser2.id) {
-          throw new Error('Unauthorized to cancel this booking')
+        if (user.role !== "ADMIN" && bookingToCancel.ownerId !== regularUser2.id) {
+          throw new Error("Unauthorized to cancel this booking")
         }
 
         return true
       }
 
-      await expect(attemptCancel()).rejects.toThrow('Unauthorized to cancel this booking')
+      await expect(attemptCancel()).rejects.toThrow("Unauthorized to cancel this booking")
 
       // Verify booking is still active
       const stillActiveBooking = await prisma.booking.findUnique({
@@ -181,7 +191,7 @@ describe('Admin Cancellation Permissions', () => {
       expect(stillActiveBooking?.canceledAt).toBeNull()
     })
 
-    it('should allow users to cancel their own bookings', async () => {
+    it("should allow users to cancel their own bookings", async () => {
       // User creates their own booking
       const tomorrow = addDays(new Date(), 1)
       const booking = await createTestBooking({
@@ -202,8 +212,8 @@ describe('Admin Cancellation Permissions', () => {
     })
   })
 
-  describe('Cancellation of Bookings with Attendees', () => {
-    it('should allow admin to cancel bookings with multiple attendees', async () => {
+  describe("Cancellation of Bookings with Attendees", () => {
+    it("should allow admin to cancel bookings with multiple attendees", async () => {
       const tomorrow = addDays(new Date(), 1)
       const booking = await createTestBooking({
         roomId: room.id,
@@ -221,7 +231,7 @@ describe('Admin Cancellation Permissions', () => {
       })
 
       // Admin cancels booking with attendees
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async tx => {
         const canceled = await tx.booking.update({
           where: { id: booking.id },
           data: { canceledAt: new Date() },
@@ -244,8 +254,8 @@ describe('Admin Cancellation Permissions', () => {
         await tx.activityLog.create({
           data: {
             actorId: adminUser.id,
-            action: 'BOOKING_CANCELED_WITH_ATTENDEES',
-            entityType: 'booking',
+            action: "BOOKING_CANCELED_WITH_ATTENDEES",
+            entityType: "booking",
             entityId: booking.id,
             metadata: {
               affectedUserIds: affectedUsers.map(u => u.id),
@@ -261,7 +271,7 @@ describe('Admin Cancellation Permissions', () => {
       expect(result.affectedUsers).toHaveLength(3) // Owner + 2 attendees
     })
 
-    it('should prevent attendees from canceling bookings they dont own', async () => {
+    it("should prevent attendees from canceling bookings they dont own", async () => {
       const tomorrow = addDays(new Date(), 1)
       const booking = await createTestBooking({
         roomId: room.id,
@@ -286,7 +296,7 @@ describe('Admin Cancellation Permissions', () => {
         if (!user || !booking) return false
 
         // Only owner or admin can cancel
-        return user.role === 'ADMIN' || booking.ownerId === userId
+        return user.role === "ADMIN" || booking.ownerId === userId
       }
 
       const user2CanCancel = await canCancel(regularUser2.id, booking.id)
@@ -300,8 +310,8 @@ describe('Admin Cancellation Permissions', () => {
     })
   })
 
-  describe('Cancellation of Past and In-Progress Bookings', () => {
-    it('should allow admin to cancel past bookings', async () => {
+  describe("Cancellation of Past and In-Progress Bookings", () => {
+    it("should allow admin to cancel past bookings", async () => {
       const yesterday = addDays(new Date(), -1)
       const booking = await createTestBooking({
         roomId: room.id,
@@ -327,7 +337,7 @@ describe('Admin Cancellation Permissions', () => {
       expect(deletedSlots.length).toBeGreaterThan(0)
     })
 
-    it('should handle cancellation of in-progress bookings correctly', async () => {
+    it("should handle cancellation of in-progress bookings correctly", async () => {
       const now = new Date()
       const oneHourAgo = addDays(now, 0)
       oneHourAgo.setHours(now.getHours() - 1)
@@ -342,7 +352,7 @@ describe('Admin Cancellation Permissions', () => {
       })
 
       // Cancel in-progress booking
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async tx => {
         const canceled = await tx.booking.update({
           where: { id: booking.id },
           data: { canceledAt: now },
@@ -372,8 +382,8 @@ describe('Admin Cancellation Permissions', () => {
     })
   })
 
-  describe('Bulk Cancellation by Admin', () => {
-    it('should allow admin to bulk cancel bookings for room maintenance', async () => {
+  describe("Bulk Cancellation by Admin", () => {
+    it("should allow admin to bulk cancel bookings for room maintenance", async () => {
       const tomorrow = addDays(new Date(), 1)
       const bookings = []
 
@@ -389,7 +399,7 @@ describe('Admin Cancellation Permissions', () => {
       }
 
       // Admin bulk cancels for maintenance
-      const bulkCancel = await prisma.$transaction(async (tx) => {
+      const bulkCancel = await prisma.$transaction(async tx => {
         const bookingIds = bookings.map(b => b.id)
 
         // Cancel all bookings
@@ -414,11 +424,11 @@ describe('Admin Cancellation Permissions', () => {
         await tx.activityLog.create({
           data: {
             actorId: adminUser.id,
-            action: 'BULK_BOOKING_CANCELLATION',
-            entityType: 'room',
+            action: "BULK_BOOKING_CANCELLATION",
+            entityType: "room",
             entityId: room.id,
             metadata: {
-              reason: 'Room maintenance',
+              reason: "Room maintenance",
               canceledCount: count,
               bookingIds,
               date: tomorrow.toISOString(),
@@ -444,14 +454,14 @@ describe('Admin Cancellation Permissions', () => {
     })
   })
 
-  describe('Permission Escalation Prevention', () => {
-    it('should prevent permission elevation through API manipulation', async () => {
+  describe("Permission Escalation Prevention", () => {
+    it("should prevent permission elevation through API manipulation", async () => {
       // Regular user tries to set their role to ADMIN
       const attemptElevation = async () => {
         try {
           await prisma.user.update({
             where: { id: regularUser1.id },
-            data: { role: 'ADMIN' },
+            data: { role: "ADMIN" },
           })
           return true
         } catch {
@@ -468,7 +478,7 @@ describe('Admin Cancellation Permissions', () => {
         // Reset the user
         await prisma.user.update({
           where: { id: regularUser1.id },
-          data: { role: 'USER' },
+          data: { role: "USER" },
         })
       }
 
@@ -476,14 +486,14 @@ describe('Admin Cancellation Permissions', () => {
       const verifyPermission = async (userId: string) => {
         const user = await prisma.user.findUnique({ where: { id: userId } })
         // In production, this check would be in middleware
-        return user?.role === 'ADMIN'
+        return user?.role === "ADMIN"
       }
 
       const hasAdminRights = await verifyPermission(regularUser1.id)
       expect(hasAdminRights).toBe(false)
     })
 
-    it('should audit all admin actions', async () => {
+    it("should audit all admin actions", async () => {
       const tomorrow = addDays(new Date(), 1)
 
       // Create multiple bookings
@@ -500,7 +510,7 @@ describe('Admin Cancellation Permissions', () => {
 
       // Admin cancels each booking (with logging)
       for (const booking of bookings) {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async tx => {
           await tx.booking.update({
             where: { id: booking.id },
             data: { canceledAt: new Date() },
@@ -509,8 +519,8 @@ describe('Admin Cancellation Permissions', () => {
           await tx.activityLog.create({
             data: {
               actorId: adminUser.id,
-              action: 'ADMIN_CANCELED_USER_BOOKING',
-              entityType: 'booking',
+              action: "ADMIN_CANCELED_USER_BOOKING",
+              entityType: "booking",
               entityId: booking.id,
               metadata: {
                 adminEmail: adminUser.email,
@@ -526,7 +536,7 @@ describe('Admin Cancellation Permissions', () => {
       const adminActions = await prisma.activityLog.findMany({
         where: {
           actorId: adminUser.id,
-          action: 'ADMIN_CANCELED_USER_BOOKING',
+          action: "ADMIN_CANCELED_USER_BOOKING",
         },
       })
 

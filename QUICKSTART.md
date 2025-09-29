@@ -26,6 +26,7 @@ scripts\quickstart.bat
 ```
 
 This script will:
+
 1. Check Docker is running
 2. Create .env file
 3. Install dependencies
@@ -35,6 +36,7 @@ This script will:
 7. Set up authentication
 
 Then just run:
+
 ```bash
 npm run dev
 ```
@@ -61,6 +63,7 @@ cp .env.example .env
 ```
 
 The default `.env` file should contain:
+
 ```
 DATABASE_URL="mysql://root:password@localhost:3306/nookbook"
 ```
@@ -125,6 +128,7 @@ Use the dropdown in the top navigation bar to switch between users (mock authent
 ### Main Features
 
 #### 1. **Dashboard → Availability**
+
 - Search for available rooms by:
   - Site (SF, NY, London, Shanghai)
   - Date/date range
@@ -140,12 +144,14 @@ Use the dropdown in the top navigation bar to switch between users (mock authent
 - Click to create a booking
 
 #### 2. **Dashboard → My Bookings**
+
 - View your upcoming and past bookings
 - See bookings you own and ones you're attending
 - Cancel bookings you own
 - View booking details and notes
 
 #### 3. **Admin Features** (alice-admin only)
+
 - **Dashboard → Admin → Sites**: Manage office locations
 - **Dashboard → Admin → Rooms**: Manage rooms per site
 - **Dashboard → Admin → Activity**: View global activity log
@@ -172,10 +178,13 @@ Use the dropdown in the top navigation bar to switch between users (mock authent
 ## Troubleshooting
 
 ### Port Already in Use
+
 If port 3000 is busy, the server will automatically use 3001, 3002, etc.
 
 ### Authentication Issues
+
 If you see "Unauthorized" errors:
+
 ```bash
 # Re-sync authentication IDs
 npx tsx scripts/fix-auth.ts
@@ -183,6 +192,7 @@ npx tsx scripts/fix-auth.ts
 ```
 
 ### Database Issues
+
 ```bash
 # Reset database completely
 npx prisma migrate reset
@@ -199,6 +209,50 @@ npm run db:studio    # Open Prisma Studio (database GUI)
 npm test            # Run tests
 ```
 
+## Data Generation Scripts
+
+For testing different booking scenarios, use these data generation scripts:
+
+```bash
+# Clean up existing bookings (keeps users, sites, rooms)
+npm run db:cleanup-bookings
+
+# Generate light/realistic dataset (~30-40% utilization)
+npm run db:generate-light
+
+# Generate chaotic/busy dataset (~70-85% utilization)
+npm run db:generate-chaotic
+
+# Full reset and reseed
+npm run db:reset
+```
+
+### Dataset Characteristics
+
+**Light Dataset** (`db:generate-light`):
+
+- Moderate booking density typical of a real office
+- Recurring weekly meetings (standups, sprint ceremonies)
+- Scattered 1:1s and project meetings
+- Business hours only (8am-6pm), no weekends
+- ~30-40% room utilization
+
+**Chaotic Dataset** (`db:generate-chaotic`):
+
+- Very high booking density simulating a busy office
+- Includes weekend meetings and off-hours sessions (5am-10pm)
+- Emergency meetings, crisis sessions, deadline crunches
+- Back-to-back bookings with high conflict rate
+- Some meetings start off the 30-minute grid
+- ~70-85% peak hour utilization
+
+Use the chaotic dataset to test:
+
+- UI performance with many bookings
+- Conflict detection and handling
+- Calendar navigation with dense schedules
+- Availability search in busy periods
+
 ## Architecture
 
 - **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS
@@ -210,6 +264,7 @@ npm test            # Run tests
 ## Sample Data
 
 The seed includes:
+
 - 4 sites with different timezones
 - 5 rooms per site (20 total)
 - Various pre-existing bookings to demonstrate the system

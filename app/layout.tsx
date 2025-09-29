@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "NookBook - Room Booking System",
   description: "Book meeting rooms across all office locations",
   icons: {
-    icon: '/favicon.svg',
+    icon: "/favicon.svg",
   },
 }
 
@@ -23,7 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${jetbrainsMono.variable} font-mono antialiased min-h-screen bg-gray-950 text-gray-100`}>{children}</body>
+      <body
+        className={`${jetbrainsMono.variable} font-mono antialiased min-h-screen bg-gray-950 text-gray-100`}
+      >
+        {children}
+      </body>
     </html>
   )
 }

@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id // Using email as ID for simplicity
   email        String   @unique
   name         String
   timezone     String   // IANA tz

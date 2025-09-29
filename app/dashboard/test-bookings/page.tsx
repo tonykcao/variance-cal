@@ -8,7 +8,7 @@ export default function TestBookingsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/bookings?scope=upcoming')
+    fetch("/api/bookings?scope=upcoming")
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
@@ -32,9 +32,7 @@ export default function TestBookingsPage() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold">Current User:</h2>
-        <pre className="bg-gray-100 p-2 rounded">
-          {JSON.stringify(data?.currentUser, null, 2)}
-        </pre>
+        <pre className="bg-gray-100 p-2 rounded">{JSON.stringify(data?.currentUser, null, 2)}</pre>
       </div>
 
       <div className="mb-4">
@@ -45,10 +43,10 @@ export default function TestBookingsPage() {
         <h2 className="text-lg font-semibold mb-2">Bookings:</h2>
         {data?.bookings?.map((booking: any, idx: number) => (
           <div key={booking.id} className="mb-4 p-4 border rounded">
-            <div>Booking {idx + 1}: {booking.roomName} at {booking.siteName}</div>
-            <div className="text-sm text-gray-600">
-              Start: {booking.startLocal} (room time)
+            <div>
+              Booking {idx + 1}: {booking.roomName} at {booking.siteName}
             </div>
+            <div className="text-sm text-gray-600">Start: {booking.startLocal} (room time)</div>
             <div className="text-sm text-gray-600">
               Owner: {booking.owner.name} {booking.isOwner ? "(You)" : ""}
             </div>

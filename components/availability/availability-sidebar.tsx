@@ -5,11 +5,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Search, MapPin, Users, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { useSites } from "@/hooks/use-sites"
@@ -29,7 +25,12 @@ export interface SearchFilters {
   timeWindow?: { start: string; end: string }
 }
 
-export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initialSite }: AvailabilitySidebarProps) {
+export function AvailabilitySidebar({
+  onSearch,
+  isSearching,
+  initialDate,
+  initialSite,
+}: AvailabilitySidebarProps) {
   const { sites, loading } = useSites()
   const [selectedSites, setSelectedSites] = useState<string[]>([])
   const [capacity, setCapacity] = useState(1)
@@ -38,7 +39,7 @@ export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initia
     if (initialDate) return initialDate
 
     const nextMonday = new Date()
-    nextMonday.setDate(nextMonday.getDate() + (1 + 7 - nextMonday.getDay()) % 7)
+    nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7))
     return nextMonday
   })
   const [timeStart, setTimeStart] = useState("")
@@ -83,10 +84,8 @@ export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initia
   }, [sites, initialSite, initialDate])
 
   const handleSiteToggle = (siteId: string) => {
-    setSelectedSites((prev) =>
-      prev.includes(siteId)
-        ? prev.filter((id) => id !== siteId)
-        : [...prev, siteId]
+    setSelectedSites(prev =>
+      prev.includes(siteId) ? prev.filter(id => id !== siteId) : [...prev, siteId]
     )
   }
 
@@ -113,9 +112,7 @@ export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initia
             <Search className="h-4 w-4 text-muted-foreground" />
             Search Filters
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Find available rooms
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">Find available rooms</p>
         </div>
 
         {/* Date Selection */}
@@ -138,7 +135,7 @@ export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initia
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(d) => d && setDate(d)}
+                onSelect={d => d && setDate(d)}
                 initialFocus
                 className="bg-background text-foreground"
               />
@@ -156,7 +153,7 @@ export function AvailabilitySidebar({ onSearch, isSearching, initialDate, initia
             <div className="text-xs text-muted-foreground">Loading sites...</div>
           ) : (
             <div className="space-y-2">
-              {sites.map((site) => (
+              {sites.map(site => (
                 <div key={site.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={site.id}

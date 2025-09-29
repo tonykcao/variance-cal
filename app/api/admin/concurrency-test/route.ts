@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const currentUser = await getCurrentUser(request)
 
     if (!currentUser || currentUser.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized - Admin access required" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -21,14 +18,11 @@ export async function POST(request: NextRequest) {
     // Get a room for testing
     const room = await prisma.room.findFirst({
       where: { site: { name: "San Francisco" } },
-      include: { site: true }
+      include: { site: true },
     })
 
     if (!room) {
-      return NextResponse.json(
-        { error: "No test room available" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "No test room available" }, { status: 404 })
     }
 
     // Find a future time slot for testing (tomorrow at 2 PM)
@@ -53,18 +47,18 @@ export async function POST(request: NextRequest) {
         roomId: room.id,
         slotStartUtc: {
           gte: startUtc,
-          lt: endUtc
-        }
-      }
+          lt: endUtc,
+        },
+      },
     })
 
     // Get test users
     const testUsers = await prisma.user.findMany({
       where: {
         email: {
-          in: ["alice@example.com", "bob@example.com", "connor@example.com"]
-        }
-      }
+          in: ["alice@example.com", "bob@example.com", "connor@example.com"],
+        },
+      },
     })
 
     if (testUsers.length < 3) {
@@ -88,11 +82,11 @@ export async function POST(request: NextRequest) {
       endLocal,
       startUtc: startUtc.toISOString(),
       endUtc: endUtc.toISOString(),
-      slotsCount: enumerateSlots(startUtc, endUtc).length
+      slotsCount: enumerateSlots(startUtc, endUtc).length,
     }
 
     // Simulate concurrent booking attempts
-    const bookingPromises = testUsers.map(async (user) => {
+    const bookingPromises = testUsers.map(async user => {
       const startTime = Date.now()
 
       try {
@@ -100,15 +94,15 @@ export async function POST(request: NextRequest) {
         const slots = enumerateSlots(startUtc, endUtc)
 
         // Try to create booking in a transaction
-        const booking = await prisma.$transaction(async (tx) => {
+        const booking = await prisma.$transaction(async tx => {
           // Create the booking
           const newBooking = await tx.booking.create({
             data: {
               roomId: room.id,
               ownerId: user.id,
               startUtc,
-              endUtc
-            }
+              endUtc,
+            },
           })
 
           // Try to create slot reservations
@@ -116,8 +110,8 @@ export async function POST(request: NextRequest) {
             data: slots.map(slotStart => ({
               bookingId: newBooking.id,
               roomId: room.id,
-              slotStartUtc: slotStart
-            }))
+              slotStartUtc: slotStart,
+            })),
           })
 
           // Log activity
@@ -131,9 +125,9 @@ export async function POST(request: NextRequest) {
                 roomId: room.id,
                 roomName: room.name,
                 startUtc: startUtc.toISOString(),
-                endUtc: endUtc.toISOString()
-              }
-            }
+                endUtc: endUtc.toISOString(),
+              },
+            },
           })
 
           return newBooking
@@ -145,7 +139,7 @@ export async function POST(request: NextRequest) {
           userName: user.name,
           success: true,
           message: `Successfully booked in ${elapsed}ms`,
-          timestamp: elapsed
+          timestamp: elapsed,
         })
 
         bookingCreated = {
@@ -154,7 +148,7 @@ export async function POST(request: NextRequest) {
           room: room.name,
           site: room.site.name,
           startLocal,
-          endLocal
+          endLocal,
         }
 
         return { success: true, booking, user: user.name }
@@ -171,7 +165,7 @@ export async function POST(request: NextRequest) {
           message: isConflict
             ? `Blocked by database constraint (expected) in ${elapsed}ms`
             : `Error: ${error.message} in ${elapsed}ms`,
-          timestamp: elapsed
+          timestamp: elapsed,
         })
 
         return { success: false, error: error.message, user: user.name }
@@ -184,10 +178,10 @@ export async function POST(request: NextRequest) {
     // Clean up the test booking after verification
     if (bookingCreated) {
       await prisma.bookingSlot.deleteMany({
-        where: { bookingId: bookingCreated.id }
+        where: { bookingId: bookingCreated.id },
       })
       await prisma.booking.delete({
-        where: { id: bookingCreated.id }
+        where: { id: bookingCreated.id },
       })
     }
 
@@ -210,14 +204,11 @@ export async function POST(request: NextRequest) {
         totalAttempts: testUsers.length,
         successfulBookings: successCount,
         blockedBookings: testUsers.length - successCount,
-        testPassed: expectedSuccess
-      }
+        testPassed: expectedSuccess,
+      },
     })
   } catch (error) {
     console.error("Concurrency test error:", error)
-    return NextResponse.json(
-      { error: "Failed to run concurrency test" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to run concurrency test" }, { status: 500 })
   }
 }

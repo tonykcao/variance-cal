@@ -11,28 +11,28 @@ import {
   enumerateSlots,
   isSameDayInTimezone,
   SLOT_DURATION_MINUTES,
-} from './time';
-import { addMinutes, isAfter, isBefore, isEqual } from 'date-fns';
+} from "./time"
+import { addMinutes, isAfter, isBefore, isEqual } from "date-fns"
 
 /**
  * Opening hours for a single day
  */
 export interface DayHours {
-  open: string; // HH:mm format
-  close: string; // HH:mm format
+  open: string // HH:mm format
+  close: string // HH:mm format
 }
 
 /**
  * Opening hours for all weekdays
  */
 export interface OpeningHours {
-  mon?: DayHours;
-  tue?: DayHours;
-  wed?: DayHours;
-  thu?: DayHours;
-  fri?: DayHours;
-  sat?: DayHours;
-  sun?: DayHours;
+  mon?: DayHours
+  tue?: DayHours
+  wed?: DayHours
+  thu?: DayHours
+  fri?: DayHours
+  sat?: DayHours
+  sun?: DayHours
 }
 
 /**
@@ -50,15 +50,15 @@ export function isWithinOpeningHours(
   timezone: string
 ): boolean {
   // Check each slot in the range
-  const slots = enumerateSlots(startUtc, endUtc);
+  const slots = enumerateSlots(startUtc, endUtc)
 
   for (const slotStart of slots) {
     if (!isSlotWithinOpeningHours(slotStart, openingHours, timezone)) {
-      return false;
+      return false
     }
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -73,26 +73,26 @@ export function isSlotWithinOpeningHours(
   openingHours: OpeningHours,
   timezone: string
 ): boolean {
-  const weekday = getWeekdayInTimezone(slotStartUtc, timezone);
-  const dayHours = openingHours[weekday as keyof OpeningHours];
+  const weekday = getWeekdayInTimezone(slotStartUtc, timezone)
+  const dayHours = openingHours[weekday as keyof OpeningHours]
 
   // If no hours defined for this day, it's closed
-  if (!dayHours) return false;
+  if (!dayHours) return false
 
   // Get the slot end time
-  const slotEndUtc = addMinutes(slotStartUtc, SLOT_DURATION_MINUTES);
+  const slotEndUtc = addMinutes(slotStartUtc, SLOT_DURATION_MINUTES)
 
   // Convert slot times to local
-  const slotStartLocal = utcToLocal(slotStartUtc, timezone);
-  const slotEndLocal = utcToLocal(slotEndUtc, timezone);
+  const slotStartLocal = utcToLocal(slotStartUtc, timezone)
+  const slotEndLocal = utcToLocal(slotEndUtc, timezone)
 
   // Create opening/closing times for comparison
-  const openTime = combineDateAndTime(slotStartUtc, dayHours.open, timezone);
-  const closeTime = combineDateAndTime(slotStartUtc, dayHours.close, timezone);
+  const openTime = combineDateAndTime(slotStartUtc, dayHours.open, timezone)
+  const closeTime = combineDateAndTime(slotStartUtc, dayHours.close, timezone)
 
   // Convert to local for comparison
-  const openLocal = utcToLocal(openTime, timezone);
-  const closeLocal = utcToLocal(closeTime, timezone);
+  const openLocal = utcToLocal(openTime, timezone)
+  const closeLocal = utcToLocal(closeTime, timezone)
 
   // Check if slot is within hours
   // Slot start must be at or after open time
@@ -100,7 +100,7 @@ export function isSlotWithinOpeningHours(
   return (
     (isAfter(slotStartLocal, openLocal) || isEqual(slotStartLocal, openLocal)) &&
     (isBefore(slotEndLocal, closeLocal) || isEqual(slotEndLocal, closeLocal))
-  );
+  )
 }
 
 /**
@@ -115,18 +115,18 @@ export function getAvailableSlotsForDay(
   openingHours: OpeningHours,
   timezone: string
 ): Date[] {
-  const weekday = getWeekdayInTimezone(date, timezone);
-  const dayHours = openingHours[weekday as keyof OpeningHours];
+  const weekday = getWeekdayInTimezone(date, timezone)
+  const dayHours = openingHours[weekday as keyof OpeningHours]
 
   // If no hours defined for this day, no slots available
-  if (!dayHours) return [];
+  if (!dayHours) return []
 
   // Get opening and closing times in UTC
-  const openTime = combineDateAndTime(date, dayHours.open, timezone);
-  const closeTime = combineDateAndTime(date, dayHours.close, timezone);
+  const openTime = combineDateAndTime(date, dayHours.open, timezone)
+  const closeTime = combineDateAndTime(date, dayHours.close, timezone)
 
   // Generate all slots between open and close
-  return enumerateSlots(openTime, closeTime);
+  return enumerateSlots(openTime, closeTime)
 }
 
 /**
@@ -135,39 +135,39 @@ export function getAvailableSlotsForDay(
  * @returns True if valid
  */
 export function validateOpeningHours(hours: unknown): hours is OpeningHours {
-  if (typeof hours !== 'object' || hours === null) return false;
+  if (typeof hours !== "object" || hours === null) return false
 
-  const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  const hoursObj = hours as Record<string, unknown>;
+  const validDays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+  const hoursObj = hours as Record<string, unknown>
 
   for (const [day, dayHours] of Object.entries(hoursObj)) {
-    if (!validDays.includes(day)) return false;
+    if (!validDays.includes(day)) return false
 
-    if (typeof dayHours !== 'object' || dayHours === null) return false;
+    if (typeof dayHours !== "object" || dayHours === null) return false
 
-    const dayHoursObj = dayHours as Record<string, unknown>;
+    const dayHoursObj = dayHours as Record<string, unknown>
 
-    if (typeof dayHoursObj.open !== 'string' || typeof dayHoursObj.close !== 'string') {
-      return false;
+    if (typeof dayHoursObj.open !== "string" || typeof dayHoursObj.close !== "string") {
+      return false
     }
 
     // Validate time format (HH:mm)
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/
     if (!timeRegex.test(dayHoursObj.open) || !timeRegex.test(dayHoursObj.close)) {
-      return false;
+      return false
     }
 
     // Validate that close time is after open time
-    const openParts = parseTimeString(dayHoursObj.open);
-    const closeParts = parseTimeString(dayHoursObj.close);
+    const openParts = parseTimeString(dayHoursObj.open)
+    const closeParts = parseTimeString(dayHoursObj.close)
 
-    const openMinutes = openParts.hours * 60 + openParts.minutes;
-    const closeMinutes = closeParts.hours * 60 + closeParts.minutes;
+    const openMinutes = openParts.hours * 60 + openParts.minutes
+    const closeMinutes = closeParts.hours * 60 + closeParts.minutes
 
-    if (closeMinutes <= openMinutes) return false;
+    if (closeMinutes <= openMinutes) return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -184,23 +184,23 @@ export function getNextAvailableSlot(
   timezone: string,
   maxDaysAhead: number = 30
 ): Date | null {
-  let currentDate = new Date(afterTime);
+  let currentDate = new Date(afterTime)
 
   for (let i = 0; i < maxDaysAhead; i++) {
-    const slots = getAvailableSlotsForDay(currentDate, openingHours, timezone);
+    const slots = getAvailableSlotsForDay(currentDate, openingHours, timezone)
 
     for (const slot of slots) {
       if (isAfter(slot, afterTime)) {
-        return slot;
+        return slot
       }
     }
 
     // Move to next day
-    currentDate = new Date(currentDate);
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate = new Date(currentDate)
+    currentDate.setDate(currentDate.getDate() + 1)
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -208,7 +208,7 @@ export function getNextAvailableSlot(
  * @returns Default opening hours configuration
  */
 export function createDefaultOpeningHours(): OpeningHours {
-  const defaultHours: DayHours = { open: '08:00', close: '20:00' };
+  const defaultHours: DayHours = { open: "08:00", close: "20:00" }
 
   return {
     mon: defaultHours,
@@ -218,7 +218,7 @@ export function createDefaultOpeningHours(): OpeningHours {
     fri: defaultHours,
     sat: defaultHours,
     sun: defaultHours,
-  };
+  }
 }
 
 /**
@@ -233,20 +233,19 @@ export function isCurrentlyOpen(
   timezone: string,
   now: Date = new Date()
 ): boolean {
-  const weekday = getWeekdayInTimezone(now, timezone);
-  const dayHours = openingHours[weekday as keyof OpeningHours];
+  const weekday = getWeekdayInTimezone(now, timezone)
+  const dayHours = openingHours[weekday as keyof OpeningHours]
 
-  if (!dayHours) return false;
+  if (!dayHours) return false
 
-  const nowLocal = utcToLocal(now, timezone);
-  const openTime = combineDateAndTime(now, dayHours.open, timezone);
-  const closeTime = combineDateAndTime(now, dayHours.close, timezone);
+  const nowLocal = utcToLocal(now, timezone)
+  const openTime = combineDateAndTime(now, dayHours.open, timezone)
+  const closeTime = combineDateAndTime(now, dayHours.close, timezone)
 
-  const openLocal = utcToLocal(openTime, timezone);
-  const closeLocal = utcToLocal(closeTime, timezone);
+  const openLocal = utcToLocal(openTime, timezone)
+  const closeLocal = utcToLocal(closeTime, timezone)
 
   return (
-    (isAfter(nowLocal, openLocal) || isEqual(nowLocal, openLocal)) &&
-    isBefore(nowLocal, closeLocal)
-  );
+    (isAfter(nowLocal, openLocal) || isEqual(nowLocal, openLocal)) && isBefore(nowLocal, closeLocal)
+  )
 }

@@ -47,6 +47,7 @@ Visit http://localhost:3000
 ## Project Overview
 
 NookBook is a meeting room booking system with:
+
 - **Multi-site support** (SF, NY, London, Shanghai)
 - **Timezone-aware scheduling**
 - **30-minute booking slots**
@@ -98,6 +99,7 @@ npm run test:integration # Integration tests
 ### Test Users
 
 After seeding:
+
 - **alice-admin** - Admin role (Pacific timezone)
 - **bob-user** - Regular user (Eastern timezone)
 - **connor-user** - Regular user (London timezone)
@@ -261,12 +263,14 @@ GET/POST /api/rooms
 ## Testing Strategy
 
 ### Unit Tests
+
 - Business logic in `/core`
 - Pure functions
 - Timezone utilities
 - Slot calculations
 
 ### Integration Tests
+
 - API endpoints
 - Database operations
 - Concurrency scenarios
@@ -359,17 +363,20 @@ npm run typecheck
 ## Performance Considerations
 
 ### Database
+
 - Strategic indexes on query fields
 - Connection pooling via Prisma
 - Batch operations where possible
 
 ### Frontend
+
 - Server Components by default
 - Client Components only when needed
 - Image optimization with next/image
 - Lazy loading for heavy components
 
 ### Caching
+
 - `revalidateTag` for cache invalidation
 - Static generation for marketing pages
 - Dynamic rendering for dashboard
@@ -395,6 +402,7 @@ npm start
 ```
 
 ### Requirements
+
 - Node.js 18+
 - MySQL 8.0+
 - Environment variables configured

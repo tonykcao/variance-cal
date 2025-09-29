@@ -45,7 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center">
               <Link href="/dashboard" className="flex items-center space-x-3 group">
                 <ClipboardClock className="h-5 w-5 text-gray-400 group-hover:text-gray-200 transition-colors" />
-                <span className="text-base font-semibold text-gray-100 tracking-tight">NookBook</span>
+                <span className="text-base font-semibold text-gray-100 tracking-tight">
+                  NookBook
+                </span>
               </Link>
 
               {/* Main Navigation */}

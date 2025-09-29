@@ -3,8 +3,8 @@
  * Use these to generate consistent test data
  */
 
-import { faker } from '@faker-js/faker'
-import { Role } from '@prisma/client'
+import { faker } from "@faker-js/faker"
+import { Role } from "@prisma/client"
 
 // Set seed for consistent test data
 faker.seed(123)
@@ -18,12 +18,12 @@ export function createMockUser(overrides?: Partial<any>) {
     email: faker.internet.email(),
     name: faker.person.fullName(),
     timezone: faker.helpers.arrayElement([
-      'America/New_York',
-      'America/Los_Angeles',
-      'Europe/London',
-      'Asia/Shanghai',
+      "America/New_York",
+      "America/Los_Angeles",
+      "Europe/London",
+      "Asia/Shanghai",
     ]),
-    role: faker.helpers.arrayElement(['USER', 'ADMIN'] as Role[]),
+    role: faker.helpers.arrayElement(["USER", "ADMIN"] as Role[]),
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
     ...overrides,
@@ -35,10 +35,10 @@ export function createMockUser(overrides?: Partial<any>) {
  */
 export function createMockSite(overrides?: Partial<any>) {
   const siteOptions = [
-    { name: 'San Francisco', timezone: 'America/Los_Angeles' },
-    { name: 'New York', timezone: 'America/New_York' },
-    { name: 'London', timezone: 'Europe/London' },
-    { name: 'Shanghai', timezone: 'Asia/Shanghai' },
+    { name: "San Francisco", timezone: "America/Los_Angeles" },
+    { name: "New York", timezone: "America/New_York" },
+    { name: "London", timezone: "Europe/London" },
+    { name: "Shanghai", timezone: "Asia/Shanghai" },
   ]
 
   const selected = faker.helpers.arrayElement(siteOptions)
@@ -57,7 +57,7 @@ export function createMockSite(overrides?: Partial<any>) {
  * Room factory
  */
 export function createMockRoom(siteId: string, overrides?: Partial<any>) {
-  const roomNames = ['Oak', 'Maple', 'Cedar', 'Pine', 'Birch', 'Redwood', 'Willow']
+  const roomNames = ["Oak", "Maple", "Cedar", "Pine", "Birch", "Redwood", "Willow"]
 
   return {
     id: faker.string.uuid(),
@@ -65,13 +65,13 @@ export function createMockRoom(siteId: string, overrides?: Partial<any>) {
     name: faker.helpers.arrayElement(roomNames),
     capacity: faker.number.int({ min: 2, max: 12 }),
     opening: {
-      mon: { open: '08:00', close: '20:00' },
-      tue: { open: '08:00', close: '20:00' },
-      wed: { open: '08:00', close: '20:00' },
-      thu: { open: '08:00', close: '20:00' },
-      fri: { open: '08:00', close: '20:00' },
-      sat: { open: '10:00', close: '16:00' },
-      sun: { open: '10:00', close: '16:00' },
+      mon: { open: "08:00", close: "20:00" },
+      tue: { open: "08:00", close: "20:00" },
+      wed: { open: "08:00", close: "20:00" },
+      thu: { open: "08:00", close: "20:00" },
+      fri: { open: "08:00", close: "20:00" },
+      sat: { open: "10:00", close: "16:00" },
+      sun: { open: "10:00", close: "16:00" },
     },
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
@@ -103,8 +103,8 @@ export function createMockBooking(roomId: string, ownerId: string, overrides?: P
  * Create a complete test scenario with related data
  */
 export function createTestScenario() {
-  const user = createMockUser({ role: 'USER' })
-  const admin = createMockUser({ role: 'ADMIN' })
+  const user = createMockUser({ role: "USER" })
+  const admin = createMockUser({ role: "ADMIN" })
   const site = createMockSite()
   const room1 = createMockRoom(site.id)
   const room2 = createMockRoom(site.id)

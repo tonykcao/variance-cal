@@ -5,10 +5,10 @@
  * PUT /api/sites - Update site (admin only)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth/current-user';
-import { createSiteSchema, updateSiteSchema } from '@/schemas/site';
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
+import { getCurrentUser } from "@/lib/auth/current-user"
+import { createSiteSchema, updateSiteSchema } from "@/schemas/site"
 
 /**
  * Get all sites
@@ -17,7 +17,7 @@ export async function GET() {
   try {
     const sites = await prisma.site.findMany({
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
       include: {
         _count: {
@@ -26,7 +26,7 @@ export async function GET() {
           },
         },
       },
-    });
+    })
 
     return NextResponse.json({
       sites: sites.map(site => ({
@@ -35,13 +35,10 @@ export async function GET() {
         timezone: site.timezone,
         roomCount: site._count.rooms,
       })),
-    });
+    })
   } catch (error) {
-    console.error('Sites API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sites' },
-      { status: 500 }
-    );
+    console.error("Sites API error:", error)
+    return NextResponse.json({ error: "Failed to fetch sites" }, { status: 500 })
   }
 }
 
@@ -50,37 +47,31 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const currentUser = await getCurrentUser(request);
+    const currentUser = await getCurrentUser(request)
 
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 403 }
-      );
+    if (!currentUser || currentUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 })
     }
 
-    const body = await request.json();
-    const validationResult = createSiteSchema.safeParse(body);
+    const body = await request.json()
+    const validationResult = createSiteSchema.safeParse(body)
 
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.flatten() },
+        { error: "Invalid input", details: validationResult.error.flatten() },
         { status: 400 }
-      );
+      )
     }
 
-    const input = validationResult.data;
+    const input = validationResult.data
 
     // Check if site name already exists
     const existingSite = await prisma.site.findFirst({
       where: { name: input.name },
-    });
+    })
 
     if (existingSite) {
-      return NextResponse.json(
-        { error: 'Site name already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Site name already exists" }, { status: 409 })
     }
 
     // Create the site
@@ -89,21 +80,21 @@ export async function POST(request: NextRequest) {
         name: input.name,
         timezone: input.timezone,
       },
-    });
+    })
 
     // Log the activity
     await prisma.activityLog.create({
       data: {
         actorId: currentUser.id,
-        action: 'SITE_CREATED',
-        entityType: 'site',
+        action: "SITE_CREATED",
+        entityType: "site",
         entityId: site.id,
         metadata: {
           siteName: site.name,
           timezone: site.timezone,
         },
       },
-    });
+    })
 
     return NextResponse.json({
       site: {
@@ -112,13 +103,10 @@ export async function POST(request: NextRequest) {
         timezone: site.timezone,
         roomCount: 0,
       },
-    });
+    })
   } catch (error) {
-    console.error('Create site error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create site' },
-      { status: 500 }
-    );
+    console.error("Create site error:", error)
+    return NextResponse.json({ error: "Failed to create site" }, { status: 500 })
   }
 }
 
@@ -127,37 +115,31 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const currentUser = await getCurrentUser(request);
+    const currentUser = await getCurrentUser(request)
 
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 403 }
-      );
+    if (!currentUser || currentUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 })
     }
 
-    const body = await request.json();
-    const validationResult = updateSiteSchema.safeParse(body);
+    const body = await request.json()
+    const validationResult = updateSiteSchema.safeParse(body)
 
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: validationResult.error.flatten() },
+        { error: "Invalid input", details: validationResult.error.flatten() },
         { status: 400 }
-      );
+      )
     }
 
-    const input = validationResult.data;
+    const input = validationResult.data
 
     // Check if site exists
     const existingSite = await prisma.site.findUnique({
       where: { id: input.id },
-    });
+    })
 
     if (!existingSite) {
-      return NextResponse.json(
-        { error: 'Site not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Site not found" }, { status: 404 })
     }
 
     // Check if new name conflicts with another site
@@ -167,20 +149,17 @@ export async function PUT(request: NextRequest) {
           name: input.name,
           id: { not: input.id },
         },
-      });
+      })
 
       if (nameConflict) {
-        return NextResponse.json(
-          { error: 'Site name already exists' },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Site name already exists" }, { status: 409 })
       }
     }
 
     // Prepare update data
-    const updateData: any = {};
-    if (input.name) updateData.name = input.name;
-    if (input.timezone) updateData.timezone = input.timezone;
+    const updateData: any = {}
+    if (input.name) updateData.name = input.name
+    if (input.timezone) updateData.timezone = input.timezone
 
     // Update the site
     const updatedSite = await prisma.site.update({
@@ -191,14 +170,14 @@ export async function PUT(request: NextRequest) {
           select: { rooms: true },
         },
       },
-    });
+    })
 
     // Log the activity
     await prisma.activityLog.create({
       data: {
         actorId: currentUser.id,
-        action: 'SITE_UPDATED',
-        entityType: 'site',
+        action: "SITE_UPDATED",
+        entityType: "site",
         entityId: updatedSite.id,
         metadata: {
           siteName: updatedSite.name,
@@ -206,7 +185,7 @@ export async function PUT(request: NextRequest) {
           changes: updateData,
         },
       },
-    });
+    })
 
     return NextResponse.json({
       site: {
@@ -215,12 +194,9 @@ export async function PUT(request: NextRequest) {
         timezone: updatedSite.timezone,
         roomCount: updatedSite._count.rooms,
       },
-    });
+    })
   } catch (error) {
-    console.error('Update site error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update site' },
-      { status: 500 }
-    );
+    console.error("Update site error:", error)
+    return NextResponse.json({ error: "Failed to update site" }, { status: 500 })
   }
 }

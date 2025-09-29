@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from "vitest"
 import {
   getDaysInMonth,
   startOfMonth,
@@ -10,12 +10,12 @@ import {
   isAfter,
   isSameDay,
   addMonths,
-  subMonths
-} from 'date-fns'
+  subMonths,
+} from "date-fns"
 
-describe('Calendar UI Tests', () => {
-  describe('Calendar Grid Alignment', () => {
-    it('should properly align dates under weekday headers for all months', () => {
+describe("Calendar UI Tests", () => {
+  describe("Calendar Grid Alignment", () => {
+    it("should properly align dates under weekday headers for all months", () => {
       const testMonths = [
         new Date(2025, 0, 1), // January 2025
         new Date(2025, 1, 1), // February 2025
@@ -48,15 +48,17 @@ describe('Calendar UI Tests', () => {
         expect(totalCells % 7).toBe(0)
 
         // Log for debugging
-        console.log(`${month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}:`)
-        console.log(`  First day starts on column: ${firstDayOfWeek} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][firstDayOfWeek]})`)
+        console.log(`${month.toLocaleDateString("en-US", { month: "long", year: "numeric" })}:`)
+        console.log(
+          `  First day starts on column: ${firstDayOfWeek} (${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][firstDayOfWeek]})`
+        )
         console.log(`  Days in month: ${daysInMonth}`)
         console.log(`  Grid rows needed: ${gridRows}`)
         console.log(`  Total cells: ${totalCells}`)
       })
     })
 
-    it('should handle February in leap years correctly', () => {
+    it("should handle February in leap years correctly", () => {
       const leapYear = new Date(2024, 1, 1) // February 2024 (leap year)
       const normalYear = new Date(2025, 1, 1) // February 2025 (normal year)
 
@@ -74,7 +76,7 @@ describe('Calendar UI Tests', () => {
       expect(normalTotalCells % 7).toBe(0)
     })
 
-    it('should handle months starting on different days of the week', () => {
+    it("should handle months starting on different days of the week", () => {
       // Find months that start on each day of the week
       const exampleMonths = {
         sunday: new Date(2025, 5, 1), // June 2025
@@ -88,17 +90,27 @@ describe('Calendar UI Tests', () => {
 
       Object.entries(exampleMonths).forEach(([dayName, date]) => {
         const firstDayOfWeek = getDay(startOfMonth(date))
-        const expectedDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(dayName)
+        const expectedDay = [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+        ].indexOf(dayName)
 
         expect(firstDayOfWeek).toBe(expectedDay)
 
-        console.log(`${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} starts on ${dayName}`)
+        console.log(
+          `${date.toLocaleDateString("en-US", { month: "long", year: "numeric" })} starts on ${dayName}`
+        )
       })
     })
   })
 
-  describe('Month Boundaries', () => {
-    it('should handle transition between months correctly', () => {
+  describe("Month Boundaries", () => {
+    it("should handle transition between months correctly", () => {
       const testDate = new Date(2025, 9, 15) // October 15, 2025
 
       // Test navigation to previous month
@@ -112,7 +124,7 @@ describe('Calendar UI Tests', () => {
       expect(nextMonth.getFullYear()).toBe(2025)
     })
 
-    it('should handle year boundaries correctly', () => {
+    it("should handle year boundaries correctly", () => {
       const december = new Date(2025, 11, 15) // December 2025
       const january = new Date(2025, 0, 15) // January 2025
 
@@ -127,7 +139,7 @@ describe('Calendar UI Tests', () => {
       expect(prevFromJan.getFullYear()).toBe(2024)
     })
 
-    it('should properly style or hide days from adjacent months', () => {
+    it("should properly style or hide days from adjacent months", () => {
       const october2025 = new Date(2025, 9, 1) // October 2025
       const firstDay = startOfMonth(october2025)
       const firstDayOfWeek = getDay(firstDay) // Wednesday = 3
@@ -150,8 +162,8 @@ describe('Calendar UI Tests', () => {
     })
   })
 
-  describe('Past Date Handling', () => {
-    it('should disable dates before today', () => {
+  describe("Past Date Handling", () => {
+    it("should disable dates before today", () => {
       const today = new Date()
       const yesterday = new Date(today)
       yesterday.setDate(yesterday.getDate() - 1)
@@ -169,7 +181,7 @@ describe('Calendar UI Tests', () => {
       expect(isAfter(tomorrow, today)).toBe(true)
     })
 
-    it('should handle past dates at month boundaries', () => {
+    it("should handle past dates at month boundaries", () => {
       // If today is October 15, 2025
       const today = new Date(2025, 9, 15)
 
@@ -190,7 +202,7 @@ describe('Calendar UI Tests', () => {
       expect(isAfter(october16, today)).toBe(true)
     })
 
-    it('should prevent selection of past dates', () => {
+    it("should prevent selection of past dates", () => {
       const today = new Date()
       const pastDates = [
         new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()), // Last year
@@ -206,8 +218,8 @@ describe('Calendar UI Tests', () => {
     })
   })
 
-  describe('Calendar Navigation', () => {
-    it('should navigate months correctly with arrow buttons', () => {
+  describe("Calendar Navigation", () => {
+    it("should navigate months correctly with arrow buttons", () => {
       let currentMonth = new Date(2025, 9, 15) // October 2025
 
       // Navigate forward through months
@@ -240,7 +252,7 @@ describe('Calendar UI Tests', () => {
       expect(monthsBackward[11].year).toBe(2024)
     })
 
-    it('should jump to specific date when provided', () => {
+    it("should jump to specific date when provided", () => {
       // Simulate "View on Calendar" button click with a booking date
       const bookingDate = new Date(2025, 11, 25) // December 25, 2025
 
@@ -256,7 +268,7 @@ describe('Calendar UI Tests', () => {
       expect(focusedDate).toBe(25)
     })
 
-    it('should handle edge case dates when jumping', () => {
+    it("should handle edge case dates when jumping", () => {
       const edgeCases = [
         new Date(2025, 0, 1), // January 1st
         new Date(2025, 11, 31), // December 31st
@@ -279,8 +291,8 @@ describe('Calendar UI Tests', () => {
     })
   })
 
-  describe('Auto-close Behavior', () => {
-    it('should close calendar after date selection', () => {
+  describe("Auto-close Behavior", () => {
+    it("should close calendar after date selection", () => {
       // Test data structure for calendar state
       const calendarState = {
         isOpen: true,
@@ -301,15 +313,15 @@ describe('Calendar UI Tests', () => {
       expect(calendarState.isOpen).toBe(false)
     })
 
-    it('should not close on month navigation', () => {
+    it("should not close on month navigation", () => {
       const calendarState = {
         isOpen: true,
         currentMonth: new Date(2025, 9, 1),
       }
 
       // Navigate to next month
-      const navigateMonth = (direction: 'next' | 'prev') => {
-        if (direction === 'next') {
+      const navigateMonth = (direction: "next" | "prev") => {
+        if (direction === "next") {
           calendarState.currentMonth = addMonths(calendarState.currentMonth, 1)
         } else {
           calendarState.currentMonth = subMonths(calendarState.currentMonth, 1)
@@ -317,74 +329,87 @@ describe('Calendar UI Tests', () => {
         // Calendar should remain open
       }
 
-      navigateMonth('next')
+      navigateMonth("next")
       expect(calendarState.isOpen).toBe(true)
       expect(calendarState.currentMonth.getMonth()).toBe(10)
 
-      navigateMonth('prev')
+      navigateMonth("prev")
       expect(calendarState.isOpen).toBe(true)
       expect(calendarState.currentMonth.getMonth()).toBe(9)
     })
 
-    it('should close on escape key press', () => {
+    it("should close on escape key press", () => {
       const calendarState = {
         isOpen: true,
       }
 
       // Simulate escape key press
       const handleKeyDown = (key: string) => {
-        if (key === 'Escape') {
+        if (key === "Escape") {
           calendarState.isOpen = false
         }
       }
 
-      handleKeyDown('Escape')
+      handleKeyDown("Escape")
       expect(calendarState.isOpen).toBe(false)
     })
 
-    it('should close when clicking outside', () => {
+    it("should close when clicking outside", () => {
       const calendarState = {
         isOpen: true,
       }
 
       // Simulate outside click
       const handleOutsideClick = (target: string) => {
-        if (!target.includes('calendar')) {
+        if (!target.includes("calendar")) {
           calendarState.isOpen = false
         }
       }
 
       // Click outside
-      handleOutsideClick('body')
+      handleOutsideClick("body")
       expect(calendarState.isOpen).toBe(false)
 
       // Reset
       calendarState.isOpen = true
 
       // Click inside
-      handleOutsideClick('calendar-day-15')
+      handleOutsideClick("calendar-day-15")
       expect(calendarState.isOpen).toBe(true)
     })
   })
 
-  describe('Timezone Handling', () => {
-    it('should display dates correctly across timezones', () => {
+  describe("Timezone Handling", () => {
+    it("should display dates correctly across timezones", () => {
       // User in NY (UTC-4/5) viewing room in London (UTC+1/0)
-      const nyUserTimezone = 'America/New_York'
-      const londonRoomTimezone = 'Europe/London'
+      const nyUserTimezone = "America/New_York"
+      const londonRoomTimezone = "Europe/London"
 
-      // October 15, 2025 in London
-      const londonDate = new Date('2025-10-15T00:00:00+01:00')
+      // October 15, 2025 at midnight in London timezone
+      // Note: We need to use UTC time that corresponds to midnight London time
+      // October 15, 2025 00:00:00 BST (British Summer Time) = UTC-1
+      const londonDate = new Date("2025-10-14T23:00:00Z") // This is midnight on Oct 15 in London
 
-      // Should display as October 15 regardless of user timezone
-      expect(londonDate.getDate()).toBe(15)
-      expect(londonDate.getMonth()).toBe(9) // October
+      // When displaying in London timezone, it should show as October 15
+      // Using toLocaleString to get the date in London timezone
+      const londonDateString = londonDate.toLocaleString("en-GB", {
+        timeZone: londonRoomTimezone,
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      })
 
-      console.log('London date:', londonDate.toISOString())
-      console.log('Display date should be October 15, 2025')
+      const [day, month, year] = londonDateString.split("/").map(Number)
+
+      expect(day).toBe(15)
+      expect(month).toBe(10) // October
+      expect(year).toBe(2025)
+
+      console.log("London date (UTC):", londonDate.toISOString())
+      console.log("Display date in London:", londonDateString)
     })
 
-    it('should handle DST transitions gracefully', () => {
+    it("should handle DST transitions gracefully", () => {
       // Note: MVP doesn't support DST, but we test that dates don't break
       const beforeDST = new Date(2025, 2, 8) // March 8, 2025
       const afterDST = new Date(2025, 2, 10) // March 10, 2025 (after DST change)
@@ -394,8 +419,8 @@ describe('Calendar UI Tests', () => {
     })
   })
 
-  describe('Calendar Grid Performance', () => {
-    it('should handle rapid month navigation', () => {
+  describe("Calendar Grid Performance", () => {
+    it("should handle rapid month navigation", () => {
       let currentMonth = new Date(2025, 9, 1)
       const startTime = Date.now()
 
@@ -419,7 +444,7 @@ describe('Calendar UI Tests', () => {
       console.log(`24 month navigation completed in ${duration}ms`)
     })
 
-    it('should efficiently handle large date ranges', () => {
+    it("should efficiently handle large date ranges", () => {
       // Test calendar can handle viewing far future dates
       const farFuture = new Date(2030, 11, 31) // December 31, 2030
       const farPast = new Date(2020, 0, 1) // January 1, 2020

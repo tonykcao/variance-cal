@@ -11,14 +11,7 @@ export default function MyBookingsPage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming")
   const userTimezone = useUserTimezone()
 
-  const {
-    bookings,
-    isLoading,
-    error,
-    cancelBooking,
-    refetch,
-    currentUser
-  } = useBookings(activeTab)
+  const { bookings, isLoading, error, cancelBooking, refetch, currentUser } = useBookings(activeTab)
 
   const handleTabChange = (tab: "upcoming" | "past") => {
     setActiveTab(tab)
@@ -63,10 +56,7 @@ export default function MyBookingsPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error}
-            <button
-              onClick={() => refetch()}
-              className="ml-2 underline hover:no-underline"
-            >
+            <button onClick={() => refetch()} className="ml-2 underline hover:no-underline">
               Try again
             </button>
           </AlertDescription>

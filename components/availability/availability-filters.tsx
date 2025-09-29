@@ -5,11 +5,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Search } from "lucide-react"
 import { format } from "date-fns"
 import { useSites } from "@/hooks/use-sites"
@@ -42,10 +38,8 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
   }, [sites])
 
   const handleSiteToggle = (siteId: string) => {
-    setSelectedSites((prev) =>
-      prev.includes(siteId)
-        ? prev.filter((id) => id !== siteId)
-        : [...prev, siteId]
+    setSelectedSites(prev =>
+      prev.includes(siteId) ? prev.filter(id => id !== siteId) : [...prev, siteId]
     )
   }
 
@@ -80,7 +74,7 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
             <div className="text-sm text-muted-foreground">Loading sites...</div>
           ) : (
             <div className="space-y-2">
-              {sites.map((site) => (
+              {sites.map(site => (
                 <div key={site.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={site.id}
@@ -112,11 +106,7 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
               -
             </Button>
             <div className="w-12 text-center font-medium">{capacity}</div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setCapacity(capacity + 1)}
-            >
+            <Button size="sm" variant="outline" onClick={() => setCapacity(capacity + 1)}>
               +
             </Button>
           </div>
@@ -127,10 +117,7 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
           <Label>Date</Label>
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {format(date, "PPP")}
               </Button>
@@ -139,13 +126,13 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(d) => {
+                onSelect={d => {
                   if (d) {
                     setDate(d)
                     setIsDatePickerOpen(false)
                   }
                 }}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                 initialFocus
               />
             </PopoverContent>
@@ -159,7 +146,7 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
             <input
               type="time"
               value={timeStart}
-              onChange={(e) => setTimeStart(e.target.value)}
+              onChange={e => setTimeStart(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               placeholder="Start"
             />
@@ -167,7 +154,7 @@ export function AvailabilityFilters({ onSearch }: AvailabilityFiltersProps) {
             <input
               type="time"
               value={timeEnd}
-              onChange={(e) => setTimeEnd(e.target.value)}
+              onChange={e => setTimeEnd(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               placeholder="End"
             />

@@ -1,25 +1,23 @@
 import { User } from "./types"
 
-// Fallback mock users - these IDs should match the database
-// These are used when the database is not available
-// The actual user IDs from the database will be used when available
+// Mock users using email as ID for simplicity
 export const MOCK_USERS: User[] = [
   {
-    id: "cmg2v5ftb0000vcm83ujio2gd",
+    id: "alice@example.com",
     email: "alice@example.com",
     name: "alice-admin",
     timezone: "America/Los_Angeles",
     role: "ADMIN",
   },
   {
-    id: "cmg2v5ftr0001vcm816b29mrv",
+    id: "bob@example.com",
     email: "bob@example.com",
     name: "bob-user",
     timezone: "America/New_York",
     role: "USER",
   },
   {
-    id: "cmg2v5fu20002vcm8wwixoqsy",
+    id: "connor@example.com",
     email: "connor@example.com",
     name: "connor-user",
     timezone: "Europe/London",

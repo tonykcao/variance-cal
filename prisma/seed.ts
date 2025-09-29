@@ -21,6 +21,7 @@ async function main() {
   // Create users
   const aliceAdmin = await prisma.user.create({
     data: {
+      id: "alice@example.com",
       email: "alice@example.com",
       name: "alice-admin",
       timezone: "America/Los_Angeles",
@@ -30,6 +31,7 @@ async function main() {
 
   const bobUser = await prisma.user.create({
     data: {
+      id: "bob@example.com",
       email: "bob@example.com",
       name: "bob-user",
       timezone: "America/New_York",
@@ -39,6 +41,7 @@ async function main() {
 
   const connorUser = await prisma.user.create({
     data: {
+      id: "connor@example.com",
       email: "connor@example.com",
       name: "connor-user",
       timezone: "Europe/London",
@@ -49,6 +52,7 @@ async function main() {
   // Create 3 dummy users for testing
   const dummy1 = await prisma.user.create({
     data: {
+      id: "dummy1@test.com",
       email: "dummy1@test.com",
       name: "dummy1",
       timezone: "America/Los_Angeles",
@@ -58,6 +62,7 @@ async function main() {
 
   const dummy2 = await prisma.user.create({
     data: {
+      id: "dummy2@test.com",
       email: "dummy2@test.com",
       name: "dummy2",
       timezone: "America/New_York",
@@ -67,6 +72,7 @@ async function main() {
 
   const dummy3 = await prisma.user.create({
     data: {
+      id: "dummy3@test.com",
       email: "dummy3@test.com",
       name: "dummy3",
       timezone: "Europe/London",
@@ -203,13 +209,13 @@ async function main() {
     await prisma.activityLog.create({
       data: {
         actorId: owner.id,
-        action: 'BOOKING_CREATED',
-        entityType: 'booking',
+        action: "BOOKING_CREATED",
+        entityType: "booking",
         entityId: booking.id,
         metadata: {
           roomId: room.id,
           roomName: room.name,
-          siteName: room.site?.name || 'Unknown',
+          siteName: room.site?.name || "Unknown",
           startUtc: startUtc.toISOString(),
           endUtc: endUtc.toISOString(),
           attendeeIds: attendees || [],
@@ -245,13 +251,10 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(11, 30, 0, 0)
 
-      const booking = await createBookingWithSlots(
-        oakRoom,
-        aliceAdmin,
-        start,
-        end,
-        [bobUser.id, dummy1.id]
-      )
+      const booking = await createBookingWithSlots(oakRoom, aliceAdmin, start, end, [
+        bobUser.id,
+        dummy1.id,
+      ])
       bookingsCreated.push("Alice: Oak room 10:00-11:30 with Bob and David")
     }
 
@@ -263,13 +266,7 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(16, 0, 0, 0)
 
-      await createBookingWithSlots(
-        hudsonRoom,
-        bobUser,
-        start,
-        end,
-        [dummy2.id]
-      )
+      await createBookingWithSlots(hudsonRoom, bobUser, start, end, [dummy2.id])
       bookingsCreated.push("Bob: Hudson room 14:00-16:00 with Emma")
 
       // Hour truncation test: Alice books a meeting that starts at 9:15 (should snap to 9:00)
@@ -297,13 +294,7 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(12, 0, 0, 0)
 
-      await createBookingWithSlots(
-        thamesRoom,
-        connorUser,
-        start,
-        end,
-        [aliceAdmin.id, bobUser.id]
-      )
+      await createBookingWithSlots(thamesRoom, connorUser, start, end, [aliceAdmin.id, bobUser.id])
       bookingsCreated.push("Connor: Thames room 10:00-12:00 with Alice and Bob")
     }
 
@@ -315,13 +306,7 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(16, 30, 0, 0)
 
-      await createBookingWithSlots(
-        bundRoom,
-        dummy3,
-        start,
-        end,
-        []
-      )
+      await createBookingWithSlots(bundRoom, dummy3, start, end, [])
       bookingsCreated.push("Frank: Bund room 14:30-16:30")
     }
 
@@ -351,13 +336,7 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(9, 30, 0, 0)
 
-      await createBookingWithSlots(
-        empireRoom,
-        bobUser,
-        start,
-        end,
-        []
-      )
+      await createBookingWithSlots(empireRoom, bobUser, start, end, [])
       bookingsCreated.push("Bob: Empire room 8:00-9:30 (early morning)")
     }
 
@@ -389,13 +368,7 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(20, 0, 0, 0) // Last available slot
 
-      await createBookingWithSlots(
-        sohoRoom,
-        connorUser,
-        start,
-        end,
-        []
-      )
+      await createBookingWithSlots(sohoRoom, connorUser, start, end, [])
       bookingsCreated.push("Connor: Soho room 18:30-20:00 (late evening)")
     }
 
@@ -407,13 +380,10 @@ async function main() {
       const end = new Date(currentDay)
       end.setHours(13, 30, 0, 0)
 
-      await createBookingWithSlots(
-        broadwayRoom,
-        bobUser,
-        start,
-        end,
-        [aliceAdmin.id, connorUser.id]
-      )
+      await createBookingWithSlots(broadwayRoom, bobUser, start, end, [
+        aliceAdmin.id,
+        connorUser.id,
+      ])
       bookingsCreated.push("Bob: Broadway room 11:00-13:30 team meeting")
     }
   }

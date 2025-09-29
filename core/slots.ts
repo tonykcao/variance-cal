@@ -10,59 +10,55 @@ import {
   isSameDayInTimezone,
   getStartOfDayInTimezone,
   SLOT_DURATION_MINUTES,
-} from './time';
-import {
-  isSlotWithinOpeningHours,
-  getAvailableSlotsForDay,
-  OpeningHours,
-} from './opening-hours';
-import { addDays, addMinutes, isBefore, isAfter, isEqual, startOfDay, endOfDay } from 'date-fns';
+} from "./time"
+import { isSlotWithinOpeningHours, getAvailableSlotsForDay, OpeningHours } from "./opening-hours"
+import { addDays, addMinutes, isBefore, isAfter, isEqual, startOfDay, endOfDay } from "date-fns"
 
 /**
  * Slot availability status
  */
 export interface SlotAvailability {
-  startUtc: Date;
-  endUtc: Date;
-  available: boolean;
-  reason?: 'outside-hours' | 'booked' | 'past';
-  isOwnBooking?: boolean;
-  isAttending?: boolean;
+  startUtc: Date
+  endUtc: Date
+  available: boolean
+  reason?: "outside-hours" | "booked" | "past"
+  isOwnBooking?: boolean
+  isAttending?: boolean
 }
 
 /**
  * Room availability for a date range
  */
 export interface RoomAvailability {
-  roomId: string;
-  roomName: string;
-  siteId: string;
-  siteName: string;
-  timezone: string;
-  capacity: number;
-  dates: DateAvailability[];
+  roomId: string
+  roomName: string
+  siteId: string
+  siteName: string
+  timezone: string
+  capacity: number
+  dates: DateAvailability[]
 }
 
 /**
  * Availability for a specific date
  */
 export interface DateAvailability {
-  date: string; // YYYY-MM-DD in room timezone
-  slots: SlotAvailability[];
+  date: string // YYYY-MM-DD in room timezone
+  slots: SlotAvailability[]
 }
 
 /**
  * Filter options for availability search
  */
 export interface AvailabilityFilter {
-  sites?: string[];
-  capacityMin?: number;
-  startDate: Date;
-  endDate?: Date;
+  sites?: string[]
+  capacityMin?: number
+  startDate: Date
+  endDate?: Date
   timeWindow?: {
-    startTime: string; // HH:mm
-    endTime: string; // HH:mm
-  };
+    startTime: string // HH:mm
+    endTime: string // HH:mm
+  }
 }
 
 /**
@@ -81,51 +77,51 @@ export function generateRoomSlots(
   timezone: string,
   bookedSlots: Map<string, { isOwnBooking?: boolean; isAttending?: boolean }>
 ): DateAvailability[] {
-  const result: DateAvailability[] = [];
-  const now = new Date();
+  const result: DateAvailability[] = []
+  const now = new Date()
 
   // Iterate through each day
-  let currentDate = new Date(startDate);
+  let currentDate = new Date(startDate)
   while (currentDate <= endDate) {
-    const dayStart = getStartOfDayInTimezone(currentDate, timezone);
-    const dayEnd = addDays(dayStart, 1);
+    const dayStart = getStartOfDayInTimezone(currentDate, timezone)
+    const dayEnd = addDays(dayStart, 1)
 
     // Get available slots for this day based on opening hours
-    const availableSlots = getAvailableSlotsForDay(currentDate, openingHours, timezone);
+    const availableSlots = getAvailableSlotsForDay(currentDate, openingHours, timezone)
 
-    const daySlots: SlotAvailability[] = [];
+    const daySlots: SlotAvailability[] = []
 
     // Check each potential slot in the day
-    const allDaySlots = enumerateSlots(dayStart, dayEnd);
+    const allDaySlots = enumerateSlots(dayStart, dayEnd)
 
     for (const slotStart of allDaySlots) {
-      const slotEnd = addMinutes(slotStart, SLOT_DURATION_MINUTES);
-      const slotKey = slotStart.toISOString();
+      const slotEnd = addMinutes(slotStart, SLOT_DURATION_MINUTES)
+      const slotKey = slotStart.toISOString()
 
-      let available = false;
-      let reason: SlotAvailability['reason'] = undefined;
-      let isOwnBooking: boolean | undefined = undefined;
-      let isAttending: boolean | undefined = undefined;
+      let available = false
+      let reason: SlotAvailability["reason"] = undefined
+      let isOwnBooking: boolean | undefined = undefined
+      let isAttending: boolean | undefined = undefined
 
       // Check if slot is in the past
       if (isBefore(slotStart, now)) {
-        available = false;
-        reason = 'past';
+        available = false
+        reason = "past"
       }
       // Check if slot is within opening hours
       else if (!availableSlots.some(s => isEqual(s, slotStart))) {
-        available = false;
-        reason = 'outside-hours';
+        available = false
+        reason = "outside-hours"
       }
       // Check if slot is booked
       else if (bookedSlots.has(slotKey)) {
-        available = false;
-        reason = 'booked';
-        const bookingInfo = bookedSlots.get(slotKey);
-        isOwnBooking = bookingInfo?.isOwnBooking;
-        isAttending = bookingInfo?.isAttending;
+        available = false
+        reason = "booked"
+        const bookingInfo = bookedSlots.get(slotKey)
+        isOwnBooking = bookingInfo?.isOwnBooking
+        isAttending = bookingInfo?.isAttending
       } else {
-        available = true;
+        available = true
       }
 
       daySlots.push({
@@ -135,21 +131,21 @@ export function generateRoomSlots(
         reason,
         isOwnBooking,
         isAttending,
-      });
+      })
     }
 
     // Format date in room timezone
-    const dateStr = formatInTimezone(currentDate, timezone, 'yyyy-MM-dd');
+    const dateStr = formatInTimezone(currentDate, timezone, "yyyy-MM-dd")
 
     result.push({
       date: dateStr,
       slots: daySlots,
-    });
+    })
 
-    currentDate = addDays(currentDate, 1);
+    currentDate = addDays(currentDate, 1)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -166,20 +162,20 @@ export function applyTimeWindowFilter(
   endTime: string,
   timezone: string
 ): SlotAvailability[] {
-  const [startHour, startMin] = startTime.split(':').map(Number);
-  const [endHour, endMin] = endTime.split(':').map(Number);
+  const [startHour, startMin] = startTime.split(":").map(Number)
+  const [endHour, endMin] = endTime.split(":").map(Number)
 
   return slots.filter(slot => {
-    const localTime = utcToLocal(slot.startUtc, timezone);
-    const slotHour = localTime.getHours();
-    const slotMin = localTime.getMinutes();
-    const slotTotalMinutes = slotHour * 60 + slotMin;
+    const localTime = utcToLocal(slot.startUtc, timezone)
+    const slotHour = localTime.getHours()
+    const slotMin = localTime.getMinutes()
+    const slotTotalMinutes = slotHour * 60 + slotMin
 
-    const windowStartMinutes = startHour * 60 + startMin;
-    const windowEndMinutes = endHour * 60 + endMin;
+    const windowStartMinutes = startHour * 60 + startMin
+    const windowEndMinutes = endHour * 60 + endMin
 
-    return slotTotalMinutes >= windowStartMinutes && slotTotalMinutes < windowEndMinutes;
-  });
+    return slotTotalMinutes >= windowStartMinutes && slotTotalMinutes < windowEndMinutes
+  })
 }
 
 /**
@@ -188,7 +184,7 @@ export function applyTimeWindowFilter(
  * @returns Boolean array where true = available
  */
 export function createSlotBitmap(slots: SlotAvailability[]): boolean[] {
-  return slots.map(slot => slot.available);
+  return slots.map(slot => slot.available)
 }
 
 /**
@@ -201,59 +197,60 @@ export function findContiguousSlots(
   slots: SlotAvailability[],
   minDuration: number = SLOT_DURATION_MINUTES
 ): { start: Date; end: Date; durationMinutes: number }[] {
-  const ranges: { start: Date; end: Date; durationMinutes: number }[] = [];
-  let currentRange: { start: Date; end: Date } | null = null;
+  const ranges: { start: Date; end: Date; durationMinutes: number }[] = []
+  let currentRange: { start: Date; end: Date } | null = null
 
   for (const slot of slots) {
     if (slot.available) {
       if (!currentRange) {
-        currentRange = { start: slot.startUtc, end: slot.endUtc };
+        currentRange = { start: slot.startUtc, end: slot.endUtc }
       } else {
         // Check if this slot is contiguous with the current range
         if (isEqual(currentRange.end, slot.startUtc)) {
-          currentRange.end = slot.endUtc;
+          currentRange.end = slot.endUtc
         } else {
           // Gap found, save current range if it meets minimum duration
-          const durationMinutes = (currentRange.end.getTime() - currentRange.start.getTime()) / 60000;
+          const durationMinutes =
+            (currentRange.end.getTime() - currentRange.start.getTime()) / 60000
           if (durationMinutes >= minDuration) {
             ranges.push({
               start: currentRange.start,
               end: currentRange.end,
               durationMinutes,
-            });
+            })
           }
-          currentRange = { start: slot.startUtc, end: slot.endUtc };
+          currentRange = { start: slot.startUtc, end: slot.endUtc }
         }
       }
     } else {
       // Not available, save current range if exists and meets minimum
       if (currentRange) {
-        const durationMinutes = (currentRange.end.getTime() - currentRange.start.getTime()) / 60000;
+        const durationMinutes = (currentRange.end.getTime() - currentRange.start.getTime()) / 60000
         if (durationMinutes >= minDuration) {
           ranges.push({
             start: currentRange.start,
             end: currentRange.end,
             durationMinutes,
-          });
+          })
         }
-        currentRange = null;
+        currentRange = null
       }
     }
   }
 
   // Handle any remaining range
   if (currentRange) {
-    const durationMinutes = (currentRange.end.getTime() - currentRange.start.getTime()) / 60000;
+    const durationMinutes = (currentRange.end.getTime() - currentRange.start.getTime()) / 60000
     if (durationMinutes >= minDuration) {
       ranges.push({
         start: currentRange.start,
         end: currentRange.end,
         durationMinutes,
-      });
+      })
     }
   }
 
-  return ranges;
+  return ranges
 }
 
 /**
@@ -263,27 +260,23 @@ export function findContiguousSlots(
  * @param slots - Available slots
  * @returns True if entire range is available
  */
-export function isRangeAvailable(
-  startUtc: Date,
-  endUtc: Date,
-  slots: SlotAvailability[]
-): boolean {
+export function isRangeAvailable(startUtc: Date, endUtc: Date, slots: SlotAvailability[]): boolean {
   // Snap times to slot boundaries
-  const rangeStart = snapTo30(startUtc, 'floor');
-  const rangeEnd = snapTo30(endUtc, 'ceil');
+  const rangeStart = snapTo30(startUtc, "floor")
+  const rangeEnd = snapTo30(endUtc, "ceil")
 
   // Generate required slots for the range
-  const requiredSlots = enumerateSlots(rangeStart, rangeEnd);
+  const requiredSlots = enumerateSlots(rangeStart, rangeEnd)
 
   // Check if all required slots are available
   for (const required of requiredSlots) {
-    const slot = slots.find(s => isEqual(s.startUtc, required));
+    const slot = slots.find(s => isEqual(s.startUtc, required))
     if (!slot || !slot.available) {
-      return false;
+      return false
     }
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -292,12 +285,12 @@ export function isRangeAvailable(
  * @returns Utilization percentage (0-100)
  */
 export function calculateUtilization(slots: SlotAvailability[]): number {
-  if (slots.length === 0) return 0;
+  if (slots.length === 0) return 0
 
-  const totalSlots = slots.length;
-  const bookedSlots = slots.filter(s => s.reason === 'booked').length;
+  const totalSlots = slots.length
+  const bookedSlots = slots.filter(s => s.reason === "booked").length
 
-  return Math.round((bookedSlots / totalSlots) * 100);
+  return Math.round((bookedSlots / totalSlots) * 100)
 }
 
 /**
@@ -306,16 +299,13 @@ export function calculateUtilization(slots: SlotAvailability[]): number {
  * @param slots - Array of slot availability
  * @returns Next available slot or null
  */
-export function getNextAvailableTime(
-  afterTime: Date,
-  slots: SlotAvailability[]
-): Date | null {
+export function getNextAvailableTime(afterTime: Date, slots: SlotAvailability[]): Date | null {
   for (const slot of slots) {
     if (slot.available && isAfter(slot.startUtc, afterTime)) {
-      return slot.startUtc;
+      return slot.startUtc
     }
   }
-  return null;
+  return null
 }
 
 /**
@@ -330,8 +320,8 @@ export function formatSlotTime(
   timezone: string,
   includeDate: boolean = false
 ): string {
-  const format = includeDate ? 'MMM d, HH:mm' : 'HH:mm';
-  const start = formatInTimezone(slot.startUtc, timezone, format);
-  const end = formatInTimezone(slot.endUtc, timezone, 'HH:mm');
-  return `${start} - ${end}`;
+  const format = includeDate ? "MMM d, HH:mm" : "HH:mm"
+  const start = formatInTimezone(slot.startUtc, timezone, format)
+  const end = formatInTimezone(slot.endUtc, timezone, "HH:mm")
+  return `${start} - ${end}`
 }
