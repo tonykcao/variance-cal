@@ -10,14 +10,14 @@ export const MOCK_USERS: User[] = [
     role: "ADMIN",
   },
   {
-    id: "bob@example.com",
+    id: "alice@example.com",
     email: "bob@example.com",
     name: "bob-user",
     timezone: "America/New_York",
     role: "USER",
   },
   {
-    id: "connor@example.com",
+    id: "bob@example.com",
     email: "connor@example.com",
     name: "connor-user",
     timezone: "Europe/London",
